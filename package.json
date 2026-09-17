@@ -1,0 +1,18 @@
+{
+  "name": "govchain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GovChain - transparent government project spending and procurement platform (Stage 1 - Module 1: Project Initialization)",
+  "scripts": {
+    "install:all": "npm run install:server && npm run install:client",
+    "install:server": "cd server && npm install",
+    "install:client": "cd client && npm install",
+    "db:init": "cd server && npm run db:init",
+    "dev": "concurrently -n server,client -c blue,green \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
