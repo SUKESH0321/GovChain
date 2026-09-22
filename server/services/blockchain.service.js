@@ -4,12 +4,18 @@ const blockchainConfig = require('../config/blockchain');
 const blockchainModel = require('../models/blockchain.model');
 
 // ============================================================================
-// GovChain — Stage 2.2 / 2.3 · blockchain service
+// GovChain — Stage 2.2 – 2.5 · blockchain service
 //
 // The single place in the backend that talks to the EVM chain:
-//   1. connect()   - ethers.js provider + signing account + GovChain contract
-//   2. record*()   - one blockchain transaction per GovChain application event
-//   3. getStatus() - safe (no-secret) view of the current configuration
+//   1. connect()          - ethers.js provider + signing account + contract
+//   2. record*()          - one blockchain transaction per GovChain app event
+//   3. get*History()      - the opposite direction (Stage 2.4): reads the actual
+//                           contract event logs back out of the chain as audit
+//                           history (project / tender / milestone)
+//   4. getStatus()        - safe (no-secret) view of the current configuration
+//   5. getBlockchainStatus() - Stage 2.5 live probe: the RPC must answer and the
+//                           contract's bytecode must be at the configured address
+//                           (never exposes secrets, never throws)
 //
 // Covered events: project create/update, tender create/assign (Stage 2.2) and
 // the milestone lifecycle create/submit/verify/reject (Stage 2.3).
@@ -26,6 +32,10 @@ const blockchainModel = require('../models/blockchain.model');
 // ({ status, eventName, txHash, blockNumber }) so application data is never
 // rolled back because of the blockchain. Failures are stored with status
 // 'FAILED' in blockchain_events so a later module can retry/reconcile them.
+//
+// Reading history is the opposite: it throws (with an HTTP status attached) when
+// the chain cannot be read, because a missing audit trail must never be reported
+// as an empty one.
 // ============================================================================
 
 // ---------------------------------------------------------------------------
@@ -354,7 +364,14 @@ async function recordEventInternal({
   } catch (error) {
     const message = sanitizeError(error);
     console.error(`[blockchain] ${eventName} could not be queued: ${message}`);
-    return { ...base, status: 'FAILED', txHash: null, blockNumber: null, error: message };
+    return {
+      ...base,
+      status: 'FAILED',
+      txHash: null,
+      blockNumber: null,
+      error: message,
+      errorKind: 'BLOCKCHAIN_ERROR',
+    };
   }
 
   try {
@@ -390,7 +407,14 @@ async function recordEventInternal({
       );
     }
 
-    return { ...base, status: 'FAILED', txHash: null, blockNumber: null, error: message };
+    return {
+      ...base,
+      status: 'FAILED',
+      txHash: null,
+      blockNumber: null,
+      error: message,
+      errorKind: 'BLOCKCHAIN_ERROR',
+    };
   }
 }
 
@@ -411,6 +435,7 @@ async function recordEvent(options) {
       txHash: null,
       blockNumber: null,
       error: message,
+      errorKind: 'BLOCKCHAIN_ERROR',
     };
   }
 }
@@ -565,6 +590,383 @@ async function recordMilestoneRejected({
   });
 }
 
+// ============================================================================
+// Stage 2.4 · blockchain history (the audit trail, read back from the chain)
+//
+// The recorders above write one event per GovChain action. This section reads
+// those events back out of the chain with ethers.js and turns them into flat
+// audit records, so the questions "what happened, who did it, when, in which
+// transaction and which block" can be answered from the chain itself.
+//
+// The event name, identifiers, actor address, blockchain timestamp, transaction
+// hash, block number and log position all come from the actual event log of the
+// deployed GovChain contract - nothing is reconstructed from PostgreSQL, and no
+// transaction hash or block number is ever invented. PostgreSQL is consulted
+// afterwards only to attach the optional "which GovChain user triggered this"
+// label (blockchain_events is keyed by transaction hash).
+// ============================================================================
+
+// How each GovChain event is read back. The argument names are exactly the
+// Solidity parameter names, so the mapping cannot drift from the contract.
+// `referenceArg` is the bounded short reference the recorders put on chain
+// (projectReference / tenderReference / the milestone `title` slot that carries
+// MST-<id> / the rejection `reason`); free-form text always stays off-chain.
+const AUDIT_EVENTS = Object.freeze({
+  ProjectCreated: {
+    entityType: 'project',
+    entityIdArg: 'projectId',
+    projectIdArg: 'projectId',
+    referenceArg: 'projectReference',
+  },
+  ProjectUpdated: {
+    entityType: 'project',
+    entityIdArg: 'projectId',
+    projectIdArg: 'projectId',
+    referenceArg: 'projectReference',
+  },
+  TenderCreated: {
+    entityType: 'tender',
+    entityIdArg: 'tenderId',
+    projectIdArg: 'projectId',
+    referenceArg: 'tenderReference',
+  },
+  TenderAssigned: {
+    entityType: 'tender',
+    entityIdArg: 'tenderId',
+    projectIdArg: 'projectId',
+    counterpartyArg: 'contractorId',
+  },
+  MilestoneCreated: {
+    entityType: 'milestone',
+    entityIdArg: 'milestoneId',
+    projectIdArg: 'projectId',
+    referenceArg: 'title',
+  },
+  MilestoneSubmitted: {
+    entityType: 'milestone',
+    entityIdArg: 'milestoneId',
+    projectIdArg: 'projectId',
+  },
+  MilestoneVerified: {
+    entityType: 'milestone',
+    entityIdArg: 'milestoneId',
+    projectIdArg: 'projectId',
+  },
+  MilestoneRejected: {
+    entityType: 'milestone',
+    entityIdArg: 'milestoneId',
+    projectIdArg: 'projectId',
+    referenceArg: 'reason',
+  },
+});
+
+// uint256 → plain number. Identifiers and unix timestamps are far below
+// Number.MAX_SAFE_INTEGER, and anything that is not a safe integer is dropped
+// instead of being silently rounded.
+function toAuditNumber(value) {
+  const big = typeof value === 'bigint' ? value : null;
+
+  if (big === null) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  const asNumber = Number(big);
+  return Number.isSafeInteger(asNumber) ? asNumber : null;
+}
+
+// On-chain strings are bounded short references — kept as emitted.
+function toAuditText(value) {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+// Errors thrown here carry the HTTP status the controllers should answer with:
+// 503 when the blockchain cannot be used at all (missing configuration / node
+// unreachable) and 502 when the node rejected the log query. Their messages
+// never contain the private key.
+function auditUnavailableError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+// The audit readers reuse the very same cached provider/contract as the
+// recorders — no provider is created per request.
+async function connectForAudit() {
+  try {
+    return await connect();
+  } catch (error) {
+    const message = sanitizeError(error);
+    console.error(`[blockchain] audit history unavailable: ${message}`);
+    throw auditUnavailableError(`Blockchain history is unavailable: ${message}`, 503);
+  }
+}
+
+// Topic hashes of every event this service records, taken from the contract ABI
+// itself (so the query cannot ask for an event the deployed contract does not
+// declare).
+function auditTopicHashes(contractInterface) {
+  return Object.keys(AUDIT_EVENTS).map((eventName) => {
+    const fragment = contractInterface.getEvent(eventName);
+    if (!fragment) {
+      throw new Error(`the GovChain ABI does not declare the ${eventName} event`);
+    }
+    return fragment.topicHash;
+  });
+}
+
+// One event log → one audit record. Returns null for anything that is not a
+// GovChain event this service records.
+function buildAuditRecord(contractInterface, log) {
+  let parsed;
+
+  try {
+    parsed = contractInterface.parseLog({ topics: log.topics, data: log.data });
+  } catch (error) {
+    console.warn(
+      `[blockchain] could not read log ${log.transactionHash} (index ${log.index}): ${sanitizeError(
+        error
+      )}`
+    );
+    return null;
+  }
+
+  const definition = parsed ? AUDIT_EVENTS[parsed.name] : null;
+  if (!definition) {
+    return null;
+  }
+
+  const { args } = parsed;
+  const entityId = toAuditNumber(args[definition.entityIdArg]);
+  const projectId = toAuditNumber(args[definition.projectIdArg]);
+  const timestamp = toAuditNumber(args.timestamp);
+
+  return {
+    event: parsed.name,
+    entityType: definition.entityType,
+    entityId,
+    projectId,
+    tenderId: definition.entityType === 'tender' ? entityId : null,
+    milestoneId: definition.entityType === 'milestone' ? entityId : null,
+    contractorId: definition.counterpartyArg
+      ? toAuditNumber(args[definition.counterpartyArg])
+      : null,
+    actor: toAuditText(args.actor),
+    // block.timestamp, exactly as emitted by the contract (unix seconds).
+    timestamp,
+    timestampISO: timestamp === null ? null : new Date(timestamp * 1000).toISOString(),
+    transactionHash: log.transactionHash,
+    blockNumber: log.blockNumber,
+    transactionIndex: log.transactionIndex,
+    logIndex: log.index,
+    contractAddress: log.address,
+    reference: definition.referenceArg ? toAuditText(args[definition.referenceArg]) : null,
+    // Filled in by attachOffChainActors() when the ledger knows the user.
+    actorUser: null,
+  };
+}
+
+// Deterministic blockchain order: block, then transaction inside the block,
+// then log position inside the transaction.
+function compareAuditRecords(a, b) {
+  if (a.blockNumber !== b.blockNumber) {
+    return a.blockNumber - b.blockNumber;
+  }
+  if (a.transactionIndex !== b.transactionIndex) {
+    return a.transactionIndex - b.transactionIndex;
+  }
+  return a.logIndex - b.logIndex;
+}
+
+// Adds the GovChain user that triggered a transaction — purely a label for the
+// audit view. A chain event with no ledger row keeps actorUser = null; the
+// history itself is never taken from the database.
+async function attachOffChainActors(records) {
+  if (records.length === 0) {
+    return records;
+  }
+
+  try {
+    const txHashes = Array.from(new Set(records.map((record) => record.transactionHash)));
+    const rows = await blockchainModel.findActorsByTxHashes(txHashes);
+    const byTxHash = new Map(rows.map((row) => [row.tx_hash, row]));
+
+    return records.map((record) => {
+      const row = byTxHash.get(record.transactionHash);
+      if (!row || !row.actor_user_id) {
+        return record;
+      }
+
+      return {
+        ...record,
+        actorUser: {
+          id: row.actor_user_id,
+          name: row.actor_name || null,
+          role: row.actor_role || null,
+        },
+      };
+    });
+  } catch (error) {
+    // Losing the optional label never costs the history itself.
+    logOnce(`audit history actor labels are unavailable: ${sanitizeError(error)}`);
+    return records;
+  }
+}
+
+// Reads every GovChain event in a single eth_getLogs call, starting at the block
+// the contract was deployed in (config/blockchain.js) and running to the chain
+// head. Filtering happens in memory because the identifier to filter on is not
+// indexed in the same topic position for every event.
+async function readAuditRecords() {
+  const connection = await connectForAudit();
+  const fromBlock = blockchainConfig.getAuditStartBlock();
+
+  try {
+    const [logs, toBlock] = await Promise.all([
+      connection.provider.getLogs({
+        address: connection.address,
+        topics: [auditTopicHashes(connection.contract.interface)],
+        fromBlock,
+        toBlock: 'latest',
+      }),
+      connection.provider.getBlockNumber(),
+    ]);
+
+    const history = await attachOffChainActors(
+      logs
+        .map((log) => buildAuditRecord(connection.contract.interface, log))
+        .filter((record) => record !== null)
+        .sort(compareAuditRecords)
+    );
+
+    return {
+      history,
+      meta: {
+        contractAddress: connection.address,
+        chainId: connection.chainId,
+        fromBlock,
+        toBlock,
+      },
+    };
+  } catch (error) {
+    const message = sanitizeError(error);
+    console.error(`[blockchain] audit history could not be read: ${message}`);
+    throw auditUnavailableError(
+      'Blockchain history could not be read from the local EVM node',
+      502
+    );
+  }
+}
+
+// Generic audit reader. Every filter is optional; the records always come from
+// the chain event logs, in blockchain order.
+async function getAuditHistory({
+  event = null,
+  entityType = null,
+  entityId = null,
+  projectId = null,
+} = {}) {
+  const { history, meta } = await readAuditRecords();
+
+  const wantedId = Number.isInteger(entityId) ? entityId : null;
+  const wantedProjectId = Number.isInteger(projectId) ? projectId : null;
+
+  const filtered = history.filter(
+    (record) =>
+      (!event || record.event === event) &&
+      (!entityType || record.entityType === entityType) &&
+      (wantedId === null || record.entityId === wantedId) &&
+      (wantedProjectId === null || record.projectId === wantedProjectId)
+  );
+
+  return { history: filtered, meta: { ...meta, eventCount: filtered.length } };
+}
+
+// Every event that belongs to one project: the project itself plus the tenders
+// and milestones recorded against it (both carry the project id on chain).
+async function getProjectHistory(projectId) {
+  return getAuditHistory({ projectId: Number(toUint(projectId, 'projectId')) });
+}
+
+// TenderCreated / TenderAssigned for one tender.
+async function getTenderHistory(tenderId) {
+  return getAuditHistory({
+    entityType: 'tender',
+    entityId: Number(toUint(tenderId, 'tenderId')),
+  });
+}
+
+// MilestoneCreated / MilestoneSubmitted / MilestoneVerified / MilestoneRejected
+// for one milestone.
+async function getMilestoneHistory(milestoneId) {
+  return getAuditHistory({
+    entityType: 'milestone',
+    entityId: Number(toUint(milestoneId, 'milestoneId')),
+  });
+}
+
+// GovChain — Stage 2.5 · live blockchain status.
+//
+// Unlike getStatus() (a configuration snapshot), this actually probes the local
+// EVM node: the RPC must answer and the configured address must hold contract
+// bytecode before `connected` / `contractReachable` are true. The method never
+// throws — an unreachable chain is a valid status, not a server error — and it
+// never exposes the private key or any other secret. Intentionally no caching
+// and no automatic retry loop: every call is one cheap read-only probe.
+async function getBlockchainStatus() {
+  const summary = blockchainConfig.getBlockchainConfig();
+
+  const status = {
+    enabled: summary.enabled,
+    configured: summary.configured,
+    rpcUrl: summary.rpcUrl,
+    contractAddress: summary.contractAddress,
+    contractAddressSource: summary.contractAddressSource,
+    connected: false,
+    contractReachable: false,
+    chainId: null,
+    signer: null,
+    latestBlock: null,
+    checkedAt: new Date().toISOString(),
+    reason: null,
+  };
+
+  if (!summary.enabled) {
+    status.reason = 'blockchain recording is disabled (BLOCKCHAIN_ENABLED=false)';
+    return status;
+  }
+  if (!summary.configured) {
+    status.reason = `blockchain recording is not configured (missing: ${summary.missing.join(', ')})`;
+    return status;
+  }
+
+  try {
+    const active = await connect();
+
+    const [blockNumber, contractCode] = await Promise.all([
+      active.provider.getBlockNumber(),
+      active.provider.getCode(active.address),
+    ]);
+
+    status.connected = true;
+    status.chainId = active.chainId;
+    status.signer = active.signerAddress;
+    status.latestBlock = blockNumber;
+    status.contractReachable =
+      typeof contractCode === 'string' && contractCode !== '0x' && contractCode.length > 2;
+
+    if (!status.contractReachable) {
+      status.reason = 'no contract bytecode at the configured GOVCHAIN_CONTRACT_ADDRESS';
+    }
+  } catch (error) {
+    // An unreachable node is reported honestly — never fabricated into success.
+    status.reason = sanitizeError(error);
+    console.error(`[blockchain] status check failed: ${status.reason}`);
+  }
+
+  return status;
+}
+
 // Safe status view (never exposes the private key).
 async function getStatus() {
   const summary = blockchainConfig.getBlockchainConfig();
@@ -594,7 +996,12 @@ module.exports = {
   recordMilestoneSubmitted,
   recordMilestoneVerified,
   recordMilestoneRejected,
+  getAuditHistory,
+  getProjectHistory,
+  getTenderHistory,
+  getMilestoneHistory,
   getStatus,
+  getBlockchainStatus,
   buildProjectReference,
   buildTenderReference,
   buildMilestoneReference,

@@ -10,7 +10,10 @@ import { createTender } from '../services/tender.service';
 export default function TenderNew() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { searchParams } = useSearchParams();
+  // useSearchParams returns a tuple [searchParams, setSearchParams] — array
+  // destructuring, not object destructuring (object form made searchParams
+  // undefined and crashed this page on mount).
+  const [searchParams] = useSearchParams();
 
   const [projects, setProjects] = useState(null);
   const [projectId, setProjectId] = useState(searchParams.get('project_id') || '');

@@ -253,6 +253,37 @@ async function rejectMilestone(req, res) {
   }
 }
 
+// GET /api/milestones/:id/blockchain-history — any authenticated user.
+//
+// Stage 2.4 · the milestone's blockchain audit history (MilestoneCreated /
+// Submitted / Verified / Rejected), read from the GovChain contract event logs.
+async function getMilestoneBlockchainHistory(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: 'Invalid milestone id' });
+    }
+
+    const milestone = await milestoneModel.findById(id);
+    if (!milestone) {
+      return res.status(404).json({ message: 'Milestone not found' });
+    }
+
+    const { history, meta } = await blockchainService.getMilestoneHistory(id);
+
+    return res.json({ milestoneId: id, projectId: milestone.project_id, history, meta });
+  } catch (error) {
+    console.error(`[milestones/blockchain-history] ${error.message}`);
+
+    // 503 = blockchain unavailable, 502 = chain could not be read; nothing is
+    // ever replaced by an empty or fabricated history.
+    if (error.statusCode === 503 || error.statusCode === 502) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
 module.exports = {
   createMilestone,
   getProjectMilestones,
@@ -260,4 +291,5 @@ module.exports = {
   submitMilestone,
   verifyMilestone,
   rejectMilestone,
+  getMilestoneBlockchainHistory,
 };

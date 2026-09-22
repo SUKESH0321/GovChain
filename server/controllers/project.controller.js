@@ -141,4 +141,43 @@ async function updateProject(req, res) {
   }
 }
 
-module.exports = { createProject, getAllProjects, getProjectById, updateProject };
+// GET /api/projects/:id/blockchain-history — any authenticated user.
+//
+// Stage 2.4 · the project's blockchain audit history: the project events plus
+// every tender and milestone event recorded against this project. It is read
+// from the GovChain contract event logs (see services/blockchain.service.js) —
+// never from the PostgreSQL records — and returned in blockchain order.
+async function getProjectBlockchainHistory(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: 'Invalid project id' });
+    }
+
+    const project = await projectModel.findById(id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const { history, meta } = await blockchainService.getProjectHistory(id);
+
+    return res.json({ projectId: id, history, meta });
+  } catch (error) {
+    console.error(`[projects/blockchain-history] ${error.message}`);
+
+    // The service tags blockchain availability problems with an explicit status
+    // (503 unavailable / 502 unreadable); anything else is a server error.
+    if (error.statusCode === 503 || error.statusCode === 502) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+module.exports = {
+  createProject,
+  getAllProjects,
+  getProjectById,
+  updateProject,
+  getProjectBlockchainHistory,
+};

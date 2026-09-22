@@ -143,4 +143,41 @@ async function assignContractor(req, res) {
   }
 }
 
-module.exports = { createTender, getAllTenders, getTenderById, assignContractor };
+// GET /api/tenders/:id/blockchain-history — any authenticated user.
+//
+// Stage 2.4 · the tender's blockchain audit history (TenderCreated /
+// TenderAssigned), read from the GovChain contract event logs.
+async function getTenderBlockchainHistory(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: 'Invalid tender id' });
+    }
+
+    const tender = await tenderModel.findById(id);
+    if (!tender) {
+      return res.status(404).json({ message: 'Tender not found' });
+    }
+
+    const { history, meta } = await blockchainService.getTenderHistory(id);
+
+    return res.json({ tenderId: id, history, meta });
+  } catch (error) {
+    console.error(`[tenders/blockchain-history] ${error.message}`);
+
+    // 503 = blockchain unavailable, 502 = chain could not be read; nothing is
+    // ever replaced by an empty or fabricated history.
+    if (error.statusCode === 503 || error.statusCode === 502) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+module.exports = {
+  createTender,
+  getAllTenders,
+  getTenderById,
+  assignContractor,
+  getTenderBlockchainHistory,
+};

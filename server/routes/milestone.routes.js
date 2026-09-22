@@ -15,6 +15,11 @@ router.use(authenticate);
 //   submit -> Government Officer, or the Contractor assigned to the project
 //   verify -> Government Officer or Auditor
 //   reject -> Government Officer or Auditor
+
+// Stage 2.4 · blockchain audit history (MilestoneCreated / Submitted / Verified
+// / Rejected), read straight from the GovChain event logs. Read-only, any
+// authenticated role — auditors included.
+router.get('/:id/blockchain-history', milestoneController.getMilestoneBlockchainHistory);
 router.put(
   '/:id/submit',
   requireRole(ROLES.GOVERNMENT_OFFICER, ROLES.CONTRACTOR),

@@ -20,4 +20,9 @@ router.put('/:id', requireRole(ROLES.GOVERNMENT_OFFICER), projectController.upda
 router.get('/:projectId/milestones', milestoneController.getProjectMilestones);
 router.post('/:projectId/milestones', requireRole(ROLES.GOVERNMENT_OFFICER), milestoneController.createMilestone);
 
+// Stage 2.4 · blockchain audit history. Read-only and open to every
+// authenticated role (officers, contractors and auditors may all inspect the
+// on-chain history of a project they can already see).
+router.get('/:id/blockchain-history', projectController.getProjectBlockchainHistory);
+
 module.exports = router;

@@ -91,6 +91,51 @@ function resolveContractAddress() {
   return { address: null, source: null };
 }
 
+// GovChain — Stage 2.4 · blockchain audit history.
+//
+// The Stage 2.1 deployment artifact also records the block the GovChain contract
+// was deployed in. A log scan (eth_getLogs) can safely start there instead of
+// block 0, because the contract cannot have emitted anything before it existed.
+// When the artifact describes a different address than the one currently in use
+// the scan falls back to block 0, so no event can ever be missed.
+let deploymentRead = false;
+let cachedDeployment = null;
+
+function loadDeployment() {
+  if (deploymentRead) {
+    return cachedDeployment;
+  }
+  deploymentRead = true;
+
+  try {
+    cachedDeployment = JSON.parse(fs.readFileSync(config.deploymentPath, 'utf8'));
+  } catch (error) {
+    // No deployment artifact (or unreadable JSON) — the scan simply starts at 0.
+    cachedDeployment = null;
+  }
+
+  return cachedDeployment;
+}
+
+function getAuditStartBlock() {
+  const deployment = loadDeployment();
+
+  if (!deployment || !Number.isInteger(deployment.blockNumber) || deployment.blockNumber < 0) {
+    return 0;
+  }
+
+  const { address } = resolveContractAddress();
+  if (
+    address &&
+    typeof deployment.address === 'string' &&
+    address.toLowerCase() !== deployment.address.toLowerCase()
+  ) {
+    return 0;
+  }
+
+  return deployment.blockNumber;
+}
+
 // Safe-to-log summary: never contains the private key.
 function getBlockchainConfig() {
   const { address, source } = resolveContractAddress();
@@ -120,8 +165,15 @@ function getBlockchainConfig() {
     abiAvailable: Boolean(abi),
     abiError,
     deploymentPath: config.deploymentPath,
+    auditStartBlock: getAuditStartBlock(),
     missing,
   };
 }
 
-module.exports = { getBlockchainConfig, loadAbi, resolveContractAddress, config };
+module.exports = {
+  getBlockchainConfig,
+  loadAbi,
+  resolveContractAddress,
+  getAuditStartBlock,
+  config,
+};

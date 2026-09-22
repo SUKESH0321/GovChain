@@ -139,6 +139,32 @@ async function findEventsByStatus(status, limit = 50) {
   return rows;
 }
 
+// ---------------------------------------------------------------------------
+// GovChain — Stage 2.4 · optional off-chain label for the audit history
+//
+// The audit history itself is read from the blockchain event logs (see
+// services/blockchain.service.js). This lookup only answers the follow-up
+// question "which GovChain user triggered that transaction?" by matching the
+// transaction hash the chain reported against the ledger row the backend wrote
+// when the event was recorded. Nothing is invented: a transaction that has no
+// ledger row simply comes back without a label.
+// ---------------------------------------------------------------------------
+async function findActorsByTxHashes(txHashes) {
+  if (!Array.isArray(txHashes) || txHashes.length === 0) {
+    return [];
+  }
+
+  const { rows } = await pool.query(
+    `SELECT be.tx_hash, be.event_name, be.entity_type, be.entity_id,
+            be.actor_user_id, u.name AS actor_name, u.role AS actor_role
+       FROM blockchain_events be
+       LEFT JOIN users u ON u.id = be.actor_user_id
+      WHERE be.tx_hash = ANY($1::text[])`,
+    [txHashes]
+  );
+  return rows;
+}
+
 module.exports = {
   findEventByIdempotencyKey,
   createEventIfAbsent,
@@ -147,4 +173,5 @@ module.exports = {
   setEntityBlockchainReference,
   findEventsForEntity,
   findEventsByStatus,
+  findActorsByTxHashes,
 };
