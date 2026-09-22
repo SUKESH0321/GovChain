@@ -1,0 +1,48 @@
+/* GradientWaves — WebGL animated wave background.
+   The component fills the element it is mounted into; the canvas is appended
+   inside this container. */
+.gradient-waves-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Global application background layer (passed through the component's
+   `className` prop). Fixed to the viewport so it never scrolls away and never
+   affects document height or width.
+
+   Layer stack (see also index.css):
+     GradientWaves / .gc-global-waves   z-index 0   (this canvas)
+     .gc-global-scrim                   z-index 1   (readability veil)
+     .gc-app-shell                      z-index 10  (all application UI)
+
+   `pointer-events: none` guarantees the canvas can never intercept a click on
+   a button, link, input, dropdown, modal or the sidebar. The mouse parallax
+   still works because the global instance is mounted with
+   `pointerTarget="window"`, i.e. cursor movement is tracked on the window
+   instead of on the canvas. */
+.gc-global-waves {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gc-global-waves canvas {
+  pointer-events: none !important;
+}
+
+.gc-app-shell {
+  position: relative;
+  z-index: 10;
+}
+
+/* The animation loop is suspended for `prefers-reduced-motion: reduce`
+   (handled inside GradientWaves.jsx — a single static frame is rendered). */

@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Hardhat build output
+artifacts/
+cache/
+
+# Generated deployment artifacts (regenerate them with `npm run deploy`)
+deployments/
+
+# Environment variables (never commit real credentials)
+.env
+.env.local
