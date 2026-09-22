@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import BlockchainAuditHistory from '../components/BlockchainAuditHistory';
 import StatusBadge from '../components/ui/StatusBadge';
 import Modal from '../components/ui/Modal';
 import ErrorState from '../components/ui/ErrorState';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { assignContractor, getTenderById } from '../services/tender.service';
+import useBlockchainHistory from '../hooks/useBlockchainHistory';
+import {
+  assignContractor,
+  getTenderBlockchainHistory,
+  getTenderById,
+} from '../services/tender.service';
 import { getContractors } from '../services/user.service';
 
 function formatTime(value) {
@@ -24,6 +30,16 @@ export default function TenderDetails() {
   const [contractors, setContractors] = useState(null);
   const [contractorId, setContractorId] = useState('');
   const [assigning, setAssigning] = useState(false);
+
+  // Stage 2.4 · the tender's on-chain audit history (TenderCreated /
+  // TenderAssigned), read from the GovChain contract event logs by the backend.
+  const {
+    history: chainHistory,
+    meta: chainMeta,
+    loading: chainLoading,
+    error: chainError,
+    refresh: refreshChainHistory,
+  } = useBlockchainHistory(getTenderBlockchainHistory, tender?.id);
 
   const isOfficer = user.role === 'government_officer';
 
@@ -104,6 +120,17 @@ export default function TenderDetails() {
           <Fact label="Description" wide value={tender.description || 'No description provided.'} />
         </div>
       </div>
+
+      {/* Stage 2.4 · the tender's own audit trail, straight from the chain. */}
+      <BlockchainAuditHistory
+        history={chainHistory}
+        meta={chainMeta}
+        loading={chainLoading}
+        error={chainError}
+        onRetry={refreshChainHistory}
+        title="Blockchain audit history"
+        hint="Tender creation and contractor assignment as emitted by the GovChain contract event logs."
+      />
 
       <Link to="/tenders" className="gc-link">← Back to tenders</Link>
 

@@ -1,5 +1,7 @@
 import { useAuth } from '../../context/AuthContext';
 
+import BlockchainStatusBadge from '../BlockchainStatusBadge';
+
 export default function Topbar({ onMenu, onSearch }) {
   const { user } = useAuth();
 
@@ -16,6 +18,7 @@ export default function Topbar({ onMenu, onSearch }) {
             ☰
           </button>
           <span className="gc-eyebrow">GovChain Operations</span>
+          <BlockchainStatusBadge />
         </div>
 
         <div className="flex items-center gap-3">

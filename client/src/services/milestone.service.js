@@ -40,3 +40,10 @@ export async function rejectMilestone(id, reason) {
     body: JSON.stringify({ reason: reason || '' }),
   });
 }
+
+// Stage 2.4 · GET /api/milestones/:id/blockchain-history
+// → { milestoneId, projectId, history, meta } — the milestone's whole on-chain
+// lifecycle (created / submitted / verified / rejected).
+export async function getMilestoneBlockchainHistory(id) {
+  return request(`/milestones/${id}/blockchain-history`);
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { MilestoneBlockchainHistory } from './BlockchainAuditHistory';
 import StatusBadge from './ui/StatusBadge';
 
 // Statuses that the Stage 1 dropdown may set. SUBMITTED / VERIFIED / REJECTED are
@@ -147,6 +148,12 @@ export default function MilestoneTimeline({
                 ) : (
                   <p className="text-gray-400">No description provided.</p>
                 )}
+
+                {/* Stage 2.4 · this milestone's own on-chain lifecycle, read from
+                    the contract event logs when the milestone is expanded. */}
+                <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                  <MilestoneBlockchainHistory milestoneId={milestone.id} />
+                </div>
               </div>
             )}
           </div>

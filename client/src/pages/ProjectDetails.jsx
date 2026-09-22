@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import MilestoneForm from '../components/MilestoneForm';
 import MilestoneTimeline from '../components/MilestoneTimeline';
 import ProjectStageTimeline from '../components/ProjectStageTimeline';
+import BlockchainAuditHistory from '../components/BlockchainAuditHistory';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
 
@@ -13,9 +14,10 @@ import StatusBadge from '../components/ui/StatusBadge';
 import Tabs from '../components/ui/Tabs';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import useBlockchainHistory from '../hooks/useBlockchainHistory';
 import useMilestones from '../hooks/useMilestones';
 import useWavesProfile from '../hooks/useWavesProfile';
-import { getProjectById } from '../services/project.service';
+import { getProjectBlockchainHistory, getProjectById } from '../services/project.service';
 import { getTenders } from '../services/tender.service';
 
 const MILESTONE_STATUSES = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
@@ -25,6 +27,8 @@ const TABS = [
   { key: 'tender', label: 'Tender' },
   { key: 'milestones', label: 'Milestones' },
   { key: 'activity', label: 'Activity' },
+  // Stage 2.4 · the immutable on-chain audit trail of the project.
+  { key: 'blockchain', label: 'Blockchain' },
 ];
 
 function formatTime(value) {
@@ -65,6 +69,16 @@ export default function ProjectDetails() {
     verify: verifyMilestone,
     reject: rejectMilestone,
   } = useMilestones(id);
+
+  // Stage 2.4 · the project-wide blockchain audit history is loaded only while
+  // its tab is open, so the event logs are queried on demand.
+  const {
+    history: chainHistory,
+    meta: chainMeta,
+    loading: chainLoading,
+    error: chainError,
+    refresh: refreshChainHistory,
+  } = useBlockchainHistory(getProjectBlockchainHistory, project?.id, tab === 'blockchain');
 
   const isOfficer = user.role === 'government_officer';
   const isAuditor = user.role === 'auditor';
@@ -380,11 +394,27 @@ export default function ProjectDetails() {
                     )}
                     <hr className="gc-divider" />
                     <p className="text-xs text-gray-500">
-                      Field-level change history is not recorded by the current backend — this
-                      activity view is derived from record timestamps.
+                      Database activity is derived from record timestamps. The immutable audit
+                      trail — with transaction hashes, blocks and actor addresses — is on the
+                      Blockchain tab.
                     </p>
                   </div>
                 </div>
+              )}
+
+              {/* Stage 2.4 · the on-chain audit history of the project and of the
+                  tenders/milestones recorded against it, read from the GovChain
+                  contract event logs by the backend. */}
+              {tab === 'blockchain' && (
+                <BlockchainAuditHistory
+                  history={chainHistory}
+                  meta={chainMeta}
+                  loading={chainLoading}
+                  error={chainError}
+                  onRetry={refreshChainHistory}
+                  title="Blockchain audit history"
+                  hint="Every GovChain action recorded for this project, its tenders and its milestones, read back from the local EVM chain in blockchain order."
+                />
               )}
 
               <Link to="/projects" className="gc-link">← Back to projects</Link>
