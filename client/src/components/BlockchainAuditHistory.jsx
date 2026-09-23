@@ -5,6 +5,7 @@ import ErrorState from './ui/ErrorState';
 import LoadingState from './ui/LoadingState';
 import useBlockchainHistory from '../hooks/useBlockchainHistory';
 import { getMilestoneBlockchainHistory } from '../services/milestone.service';
+import { getPaymentBlockchainHistory } from '../services/payment.service';
 
 // GovChain — Stage 2.4 · blockchain audit history.
 //
@@ -26,12 +27,16 @@ const EVENT_TONES = {
   MilestoneSubmitted: 'tone-amber',
   MilestoneVerified: 'tone-green',
   MilestoneRejected: 'tone-red',
+  // Stage 3.2 · payment ledger events.
+  PaymentAuthorized: 'tone-amber',
+  PaymentReleased: 'tone-green',
 };
 
 const ENTITY_LABELS = {
   project: 'Project',
   tender: 'Tender',
   milestone: 'Milestone',
+  payment: 'Payment',
 };
 
 const ROLE_LABELS = {
@@ -174,6 +179,13 @@ function AuditRow({ record }) {
             <dd className="mt-0.5">#{record.contractorId}</dd>
           </div>
         ) : null}
+        {/* Stage 3.1/3.2 · the amount carried by PaymentAuthorized/PaymentReleased. */}
+        {record.amount !== null && record.amount !== undefined ? (
+          <div>
+            <dt className="gc-eyebrow">Amount (as recorded on-chain)</dt>
+            <dd className="mt-0.5">₹{Number(record.amount).toLocaleString('en-IN')}</dd>
+          </div>
+        ) : null}
       </dl>
     </li>
   );
@@ -276,6 +288,27 @@ export function MilestoneBlockchainHistory({ milestoneId }) {
       onRetry={refresh}
       title="Milestone blockchain history"
       hint="Created / submitted / verified / rejected, as emitted by the GovChain contract."
+    />
+  );
+}
+
+// Stage 3.1/3.2 · self-loading payment variant: PaymentAuthorized / PaymentReleased
+// for one payment, read straight from the contract event logs.
+export function PaymentBlockchainHistory({ paymentId }) {
+  const { history, meta, loading, error, refresh } = useBlockchainHistory(
+    getPaymentBlockchainHistory,
+    paymentId
+  );
+
+  return (
+    <BlockchainAuditHistory
+      history={history}
+      meta={meta}
+      loading={loading}
+      error={error}
+      onRetry={refresh}
+      title="Payment blockchain history"
+      hint="Authorized / released, as emitted by the GovChain contract."
     />
   );
 }

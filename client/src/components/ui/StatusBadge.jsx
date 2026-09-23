@@ -8,6 +8,9 @@ const TONES = {
   VERIFIED: 'tone-green',
   COMPLETED: 'tone-green',
   REJECTED: 'tone-red',
+  REQUESTED: 'tone-amber',
+  AUTHORIZED: 'tone-green',
+  RELEASED: 'tone-blue',
   CLOSED: 'tone-slate',
   CANCELLED: 'tone-red',
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import ProjectStageTimeline, {
@@ -13,10 +13,12 @@ import ErrorState from '../components/ui/ErrorState';
 
 import LoadingState from '../components/ui/LoadingState';
 import StatusBadge from '../components/ui/StatusBadge';
+import usePayments from '../hooks/usePayments';
 import useProjects from '../hooks/useProjects';
 import useTable from '../hooks/useTable';
 import useTenders from '../hooks/useTenders';
 import useWavesProfile from '../hooks/useWavesProfile';
+import { useToast } from '../context/ToastContext';
 import { loadAllMilestones } from '../utils/stats';
 
 const PROJECT_STATUSES = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
@@ -72,8 +74,16 @@ export default function OfficerDashboard() {
   const { projects, loading, error, refresh } = useProjects();
   const { tenders } = useTenders();
   const waves = useWavesProfile();
+  const toast = useToast();
   const [milestones, setMilestones] = useState(null);
   const [selected, setSelected] = useState(null);
+
+  // Stage 3.3 · payments summary only. All payment management (authorize /
+  // reject / release) lives on the unified /payments dashboard, so the logic is
+  // not duplicated here.
+  const { payments, loading: paymentsLoading, error: paymentsError } = usePayments();
+  const pendingPayments = (payments || []).filter((p) => p.status === 'REQUESTED');
+  const authorizedPayments = (payments || []).filter((p) => p.status === 'AUTHORIZED');
 
   useEffect(() => {
     loadAllMilestones()
@@ -127,13 +137,13 @@ export default function OfficerDashboard() {
         </Link>
       ),
     },
-    { key: 'location', label: 'Location', sortable: true, render: (p) => p.location || '—' },
+    { key: 'location', label: 'Location', sortable: true, render: (p) => p.location || 'â€”' },
     {
       key: 'budget',
       label: 'Budget',
       sortable: true,
       align: 'right',
-      render: (p) => `₹${Number(p.budget).toLocaleString('en-IN')}`,
+      render: (p) => `â‚¹${Number(p.budget).toLocaleString('en-IN')}`,
     },
     {
       key: 'status',
@@ -162,9 +172,9 @@ export default function OfficerDashboard() {
     {
       key: 'contractor',
       label: 'Contractor',
-      render: (p) => contractorForProject(p, tenders || []) || '—',
+      render: (p) => contractorForProject(p, tenders || []) || 'â€”',
     },
-    { key: 'end_date', label: 'Deadline', sortable: true, render: (p) => p.end_date || '—' },
+    { key: 'end_date', label: 'Deadline', sortable: true, render: (p) => p.end_date || 'â€”' },
   ];
 
   return (
@@ -177,7 +187,7 @@ export default function OfficerDashboard() {
           <p className="gc-eyebrow">Officer console</p>
           <h1 className="text-2xl mt-1">Programme overview</h1>
           <p className="gc-hero-note">
-            Projects, tenders and milestones across the programme — tracked from
+            Projects, tenders and milestones across the programme â€” tracked from
             planning through to completion.
           </p>
           <div className="gc-hero-actions">
@@ -201,9 +211,51 @@ export default function OfficerDashboard() {
             <StatField delay={3} label="Total tenders" value={stats.totalTenders} />
             <StatField delay={4} label="Active tenders" value={stats.activeTenders} />
             <StatField delay={5} label="Pending milestones" value={stats.pendingMilestones} />
-            <StatField delay={5} label="Allocated budget" value={stats.allocatedBudget} prefix="₹" />
+            <StatField delay={5} label="Allocated budget" value={stats.allocatedBudget} prefix="â‚¹" />
           </div>
 
+          {/* Stage 3.3 · payments at a glance. Full management (authorize / reject /
+              release) lives on the unified Payments dashboard. */}
+          <div className="gc-panel gc-animate-entrance gc-stagger-2">
+            <div className="gc-panel-head">
+              <span className="font-semibold">Payments</span>
+              <span className="text-xs text-gray-500">
+                {payments
+                  ? `${pendingPayments.length} pending · ${authorizedPayments.length} authorized`
+                  : ''}
+              </span>
+            </div>
+            <div className="gc-panel-body">
+              {paymentsError ? (
+                <ErrorState message={paymentsError} />
+              ) : paymentsLoading ? (
+                <LoadingState rows={2} cols={4} />
+              ) : !payments || payments.length === 0 ? (
+                <EmptyState
+                  title="No payment records"
+                  hint="Contractors' payment requests for verified milestones will appear here."
+                />
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-sm text-gray-600">
+                    <span className="font-semibold">{pendingPayments.length}</span> requested ·{' '}
+                    <span className="font-semibold">{authorizedPayments.length}</span> authorized ·{' '}
+                    <span className="font-semibold">
+                      {payments.filter((p) => p.status === 'RELEASED').length}
+                    </span>{' '}
+                    released ·{' '}
+                    <span className="font-semibold">
+                      {payments.filter((p) => p.status === 'REJECTED').length}
+                    </span>{' '}
+                    rejected
+                  </div>
+                  <Link to="/payments" className="gc-btn gc-btn-primary gc-btn-sm">
+                    Open payment management
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
           <div className="gc-panel gc-animate-entrance gc-stagger-2">
             <div className="gc-panel-head">
               <span className="font-semibold">Project pipeline</span>
@@ -251,10 +303,10 @@ export default function OfficerDashboard() {
             </div>
             <div className="px-4 pt-4 flex flex-wrap gap-2">
               <div className="gc-search-input flex-1 min-w-[200px]">
-                <span className="gc-search-icon">⌕</span>
+                <span className="gc-search-icon">âŒ•</span>
                 <input
                   className="gc-input"
-                  placeholder="Search projects…"
+                  placeholder="Search projectsâ€¦"
                   value={table.search}
                   onChange={(e) => table.setSearch(e.target.value)}
                 />
@@ -309,10 +361,10 @@ export default function OfficerDashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <Fact label="Location" value={selected.location || '—'} />
-              <Fact label="Budget" value={`₹${Number(selected.budget).toLocaleString('en-IN')}`} />
-              <Fact label="Start" value={selected.start_date || '—'} />
-              <Fact label="Deadline" value={selected.end_date || '—'} />
+              <Fact label="Location" value={selected.location || 'â€”'} />
+              <Fact label="Budget" value={`â‚¹${Number(selected.budget).toLocaleString('en-IN')}`} />
+              <Fact label="Start" value={selected.start_date || 'â€”'} />
+              <Fact label="Deadline" value={selected.end_date || 'â€”'} />
               <Fact
                 label="Contractor"
                 value={contractorForProject(selected, tenders || []) || 'Not assigned'}

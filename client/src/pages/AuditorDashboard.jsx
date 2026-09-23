@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { PROJECT_STAGES, resolveProjectStage } from '../components/ProjectStageTimeline';
@@ -9,6 +9,8 @@ import ErrorState from '../components/ui/ErrorState';
 
 import LoadingState from '../components/ui/LoadingState';
 import StatusBadge from '../components/ui/StatusBadge';
+import { PaymentBlockchainHistory } from '../components/BlockchainAuditHistory';
+import usePayments from '../hooks/usePayments';
 import useProjects from '../hooks/useProjects';
 import useTable from '../hooks/useTable';
 import useTenders from '../hooks/useTenders';
@@ -37,6 +39,23 @@ export default function AuditorDashboard() {
   const { tenders } = useTenders();
   const waves = useWavesProfile();
   const [milestones, setMilestones] = useState([]);
+
+  // Stage 3.1/3.2 · read-only view of every payment request/authorization/release
+  // record, plus an on-demand on-chain history per payment.
+  const { payments, loading: paymentsLoading, error: paymentsError } = usePayments();
+  const [expandedPayments, setExpandedPayments] = useState(() => new Set());
+
+  function togglePaymentHistory(id) {
+    setExpandedPayments((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     loadAllMilestones()
@@ -266,6 +285,99 @@ export default function AuditorDashboard() {
                           <td>{milestone.due_date || '—'}</td>
                           <td><StatusBadge status={milestone.status} /></td>
                         </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Stage 3.1 · read-only payment records register. */}
+          <div className="gc-panel">
+            <div className="gc-panel-head">
+              <span className="font-semibold">Payment records</span>
+              <span className="text-xs text-gray-500">
+                {payments ? `${payments.length} records — read only` : 'read only'}
+              </span>
+            </div>
+            <div className="p-4">
+              {paymentsError ? (
+                <ErrorState message={paymentsError} />
+              ) : paymentsLoading ? (
+                <LoadingState rows={2} cols={5} />
+              ) : !payments || payments.length === 0 ? (
+                <EmptyState title="No payments" hint="No payment records exist yet." />
+              ) : (
+                <div className="gc-table-scroll">
+                  <table className="gc-table">
+                    <thead>
+                      <tr>
+                        <th>Payment</th>
+                        <th>Project</th>
+                        <th>Tender</th>
+                        <th>Milestone</th>
+                        <th className="text-right">Amount</th>
+                        <th>Status</th>
+                        <th>Requested at</th>
+                        <th>Authorized at</th>
+                        <th>Released at</th>
+                        <th>On-chain</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payments.slice(0, 20).map((payment) => (
+                        <Fragment key={payment.id}>
+                          <tr>
+                            <td className="font-medium">#{payment.id}</td>
+                            <td>
+                              <Link
+                                to={`/projects/${payment.project_id}`}
+                                className="gc-link"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {payment.project_name || '—'}
+                              </Link>
+                            </td>
+                            <td>{payment.tender_title || '—'}</td>
+                            <td>{payment.milestone_title || '—'}</td>
+                            <td className="text-right">
+                              ₹{Number(payment.amount).toLocaleString('en-IN')}
+                            </td>
+                            <td><StatusBadge status={payment.status} /></td>
+                            <td>
+                              {payment.requested_at
+                                ? String(payment.requested_at).slice(0, 16).replace('T', ' ')
+                                : '—'}
+                            </td>
+                            <td>
+                              {payment.authorized_at
+                                ? String(payment.authorized_at).slice(0, 16).replace('T', ' ')
+                                : '—'}
+                            </td>
+                            <td>
+                              {payment.released_at
+                                ? String(payment.released_at).slice(0, 16).replace('T', ' ')
+                                : '—'}
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="gc-btn gc-btn-outline gc-btn-sm"
+                                onClick={() => togglePaymentHistory(payment.id)}
+                              >
+                                {expandedPayments.has(payment.id) ? 'Hide chain' : 'View chain'}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedPayments.has(payment.id) && (
+                            <tr>
+                              <td colSpan={10} className="bg-slate-50">
+                                <PaymentBlockchainHistory paymentId={payment.id} />
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>

@@ -7,18 +7,21 @@ const LINKS = {
     ['/dashboard', 'Dashboard'],
     ['/projects', 'Projects'],
     ['/tenders', 'Tenders'],
+    ['/payments', 'Payments'],
   ],
   contractor: [
     ['/dashboard', 'Dashboard'],
     ['/projects', 'My Projects'],
     ['/tenders', 'My Tenders'],
     ['/milestones', 'My Milestones'],
+    ['/payments', 'My Payments'],
   ],
   auditor: [
     ['/dashboard', 'Dashboard'],
     ['/projects', 'Projects'],
     ['/tenders', 'Tenders'],
     ['/milestones', 'Milestones'],
+    ['/payments', 'Payments'],
   ],
 };
 

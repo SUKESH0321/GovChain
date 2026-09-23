@@ -8,6 +8,7 @@ import Health from './pages/Health';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import MilestonesList from './pages/MilestonesList';
+import PaymentsDashboard from './pages/PaymentsDashboard';
 import ProjectDetails from './pages/ProjectDetails';
 import ProjectEdit from './pages/ProjectEdit';
 import ProjectNew from './pages/ProjectNew';
@@ -59,6 +60,9 @@ export default function App() {
           />
           <Route path="/tenders/:id" element={<TenderDetails />} />
           <Route path="/milestones" element={<MilestonesList />} />
+          {/* Stage 3.3 · unified payment dashboard (role-aware: officer manages,
+              contractor sees own payments, auditor read-only). */}
+          <Route path="/payments" element={<PaymentsDashboard />} />
         </Route>
         </Routes>
       </CommandPaletteProvider>

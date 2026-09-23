@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import useBlockchainHistory from '../hooks/useBlockchainHistory';
 import useMilestones from '../hooks/useMilestones';
+import usePayments from '../hooks/usePayments';
 import useWavesProfile from '../hooks/useWavesProfile';
 import { getProjectBlockchainHistory, getProjectById } from '../services/project.service';
 import { getTenders } from '../services/tender.service';
@@ -69,6 +70,15 @@ export default function ProjectDetails() {
     verify: verifyMilestone,
     reject: rejectMilestone,
   } = useMilestones(id);
+
+  // Stage 3.1 · payment requests for this project (contractors: their own only,
+  // filtered by the backend RBAC). Used to show the current payment status on
+  // verified milestones.
+  const { payments } = usePayments();
+  const projectPayments = useMemo(
+    () => (payments || []).filter((p) => p.project_id === Number(id)),
+    [payments, id]
+  );
 
   // Stage 2.4 · the project-wide blockchain audit history is loaded only while
   // its tab is open, so the event logs are queried on demand.
@@ -365,6 +375,8 @@ export default function ProjectDetails() {
                               }
                             : undefined
                         }
+                        canRequestPayment={user.role === 'contractor'}
+                        payments={projectPayments}
                         updatingId={updatingId}
                       />
                     )}
