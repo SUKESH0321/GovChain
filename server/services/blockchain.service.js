@@ -3,6 +3,13 @@ const { ethers } = require('ethers');
 const blockchainConfig = require('../config/blockchain');
 const blockchainModel = require('../models/blockchain.model');
 
+// The deployed recordPaymentReleased(paymentId, projectId, amount, recipient)
+// requires a recipient address. GovChain contractors do not have wallets (see
+// the contract's own comments), so the on-chain recipient is the zero address —
+// an explicit "no wallet" marker — and the real recipient identity (the
+// off-chain GovChain contractor id) stays in the blockchain_events payload.
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 // ============================================================================
 // GovChain — Stage 2.2 – 2.5 · blockchain service
 //
@@ -94,6 +101,29 @@ const EVENT_RECORDERS = Object.freeze({
       toUint(entityId, 'milestoneId'),
       toUint(projectId, 'projectId'),
       buildReasonReference(reasonReference),
+    ],
+  },
+  // Stage 3.1 · the existing contract event carries paymentId/projectId/amount;
+  // the milestone id stays off-chain (blockchain_events payload) because the
+  // deployed PaymentAuthorized event has no milestone field.
+  PaymentAuthorized: {
+    fn: 'recordPaymentAuthorized',
+    args: ({ entityId, projectId, amount }) => [
+      toUint(entityId, 'paymentId'),
+      toUint(projectId, 'projectId'),
+      toUint(amount, 'amount'),
+    ],
+  },
+  // Stage 3.2 · simulated payment release. The deployed contract function is
+  // recordPaymentReleased(paymentId, projectId, amount, recipient); the recipient
+  // is the zero address because contractors have no wallets (see ZERO_ADDRESS).
+  PaymentReleased: {
+    fn: 'recordPaymentReleased',
+    args: ({ entityId, projectId, amount }) => [
+      toUint(entityId, 'paymentId'),
+      toUint(projectId, 'projectId'),
+      toUint(amount, 'amount'),
+      ZERO_ADDRESS,
     ],
   },
 });
@@ -590,6 +620,76 @@ async function recordMilestoneRejected({
   });
 }
 
+// ---------------------------------------------------------------------------
+// Stage 3.1 · payment authorization ledger
+//
+// PUT /api/payments/:id/authorize — records PaymentAuthorized on-chain after the
+// PostgreSQL status change succeeded. The milestone id is kept off-chain in the
+// ledger payload: the deployed contract event only carries paymentId, projectId
+// and amount. The payment row stores the transaction hash through the existing
+// updateEntityReference mechanism (payments.blockchain_tx_hash).
+// ---------------------------------------------------------------------------
+async function recordPaymentAuthorized({
+  paymentId,
+  projectId,
+  milestoneId,
+  amount,
+  actorUserId,
+}) {
+  return recordEvent({
+    eventName: 'PaymentAuthorized',
+    entityType: 'payment',
+    entityId: paymentId,
+    projectId,
+    actorUserId,
+    payload: {
+      milestoneId,
+      amount,
+      authorizedAt: toTimestampKey(new Date()),
+    },
+    params: { entityId: paymentId, projectId, amount },
+    idempotencyKey: `PaymentAuthorized:payment:${paymentId}`,
+    updateEntityReference: true,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Stage 3.2 · payment release ledger (simulated)
+//
+// PUT /api/payments/:id/release — records PaymentReleased on-chain after the
+// PostgreSQL status change (AUTHORIZED -> RELEASED) succeeded. No funds move:
+// the release is simulated inside GovChain and the chain record is only the
+// audit trail of that state transition. The amount comes from the stored
+// payment row — the release endpoint cannot change it. The same architecture
+// as recordPaymentAuthorized: never throws, failures land in blockchain_events
+// with status 'FAILED' and the real transaction hash/block number are waited
+// for and stored when the transaction succeeds.
+// ---------------------------------------------------------------------------
+async function recordPaymentReleased({
+  paymentId,
+  projectId,
+  contractorId,
+  amount,
+  actorUserId,
+}) {
+  return recordEvent({
+    eventName: 'PaymentReleased',
+    entityType: 'payment',
+    entityId: paymentId,
+    projectId,
+    actorUserId,
+    payload: {
+      contractorId,
+      amount,
+      recipientAddress: ZERO_ADDRESS,
+      releasedAt: toTimestampKey(new Date()),
+    },
+    params: { entityId: paymentId, projectId, amount },
+    idempotencyKey: `PaymentReleased:payment:${paymentId}`,
+    updateEntityReference: true,
+  });
+}
+
 // ============================================================================
 // Stage 2.4 · blockchain history (the audit trail, read back from the chain)
 //
@@ -657,6 +757,20 @@ const AUDIT_EVENTS = Object.freeze({
     entityIdArg: 'milestoneId',
     projectIdArg: 'projectId',
     referenceArg: 'reason',
+  },
+  // Stage 3.1/3.2 · the payment ledger events. Both carry (paymentId, projectId,
+  // amount) on chain; the milestone id and the recipient identity stay off-chain.
+  PaymentAuthorized: {
+    entityType: 'payment',
+    entityIdArg: 'paymentId',
+    projectIdArg: 'projectId',
+    amountArg: 'amount',
+  },
+  PaymentReleased: {
+    entityType: 'payment',
+    entityIdArg: 'paymentId',
+    projectIdArg: 'projectId',
+    amountArg: 'amount',
   },
 });
 
@@ -748,6 +862,8 @@ function buildAuditRecord(contractInterface, log) {
     projectId,
     tenderId: definition.entityType === 'tender' ? entityId : null,
     milestoneId: definition.entityType === 'milestone' ? entityId : null,
+    // Stage 3.1/3.2 · the on-chain amount of a payment event (null otherwise).
+    amount: definition.amountArg ? toAuditNumber(args[definition.amountArg]) : null,
     contractorId: definition.counterpartyArg
       ? toAuditNumber(args[definition.counterpartyArg])
       : null,
@@ -905,6 +1021,14 @@ async function getMilestoneHistory(milestoneId) {
   });
 }
 
+// GovChain — Stage 3.1/3.2 · PaymentAuthorized / PaymentReleased for one payment.
+async function getPaymentHistory(paymentId) {
+  return getAuditHistory({
+    entityType: 'payment',
+    entityId: Number(toUint(paymentId, 'paymentId')),
+  });
+}
+
 // GovChain — Stage 2.5 · live blockchain status.
 //
 // Unlike getStatus() (a configuration snapshot), this actually probes the local
@@ -996,10 +1120,13 @@ module.exports = {
   recordMilestoneSubmitted,
   recordMilestoneVerified,
   recordMilestoneRejected,
+  recordPaymentAuthorized,
+  recordPaymentReleased,
   getAuditHistory,
   getProjectHistory,
   getTenderHistory,
   getMilestoneHistory,
+  getPaymentHistory,
   getStatus,
   getBlockchainStatus,
   buildProjectReference,

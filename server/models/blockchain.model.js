@@ -18,6 +18,8 @@ const ENTITY_TABLES = Object.freeze({
   project: 'projects',
   tender: 'tenders',
   milestone: 'milestones',
+  // Stage 3.1 · payments keep their authorization transaction hash.
+  payment: 'payments',
 });
 
 // Looks up a previously attempted event by its idempotency key.

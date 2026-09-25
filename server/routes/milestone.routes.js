@@ -1,6 +1,7 @@
 const express = require('express');
 
 const milestoneController = require('../controllers/milestone.controller');
+const riskController = require('../controllers/risk.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/authorize');
 const { ROLES } = require('../utils/roles');
@@ -8,6 +9,12 @@ const { ROLES } = require('../utils/roles');
 const router = express.Router();
 
 router.use(authenticate);
+
+// Stage 4.2 · milestone risk analysis. Read-only, calculated on request from the
+// existing records: officers and auditors may analyse any milestone, a
+// contractor only a milestone of a project whose tender is assigned to them
+// (see risk.controller.js).
+router.get('/:milestoneId/risk-analysis', riskController.getMilestoneRiskAnalysis);
 
 // Stage 2.3 · milestone verification lifecycle. RBAC is enforced here exactly
 // like the Stage 1 routes; the controller adds the contractor assignment check.

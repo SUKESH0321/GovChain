@@ -5,12 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 const LINKS = {
   government_officer: [
     ['/dashboard', 'Dashboard'],
+    ['/risk', 'Risk Analysis'],
     ['/projects', 'Projects'],
     ['/tenders', 'Tenders'],
     ['/payments', 'Payments'],
   ],
   contractor: [
     ['/dashboard', 'Dashboard'],
+    ['/risk', 'Risk Analysis'],
     ['/projects', 'My Projects'],
     ['/tenders', 'My Tenders'],
     ['/milestones', 'My Milestones'],
@@ -18,6 +20,7 @@ const LINKS = {
   ],
   auditor: [
     ['/dashboard', 'Dashboard'],
+    ['/risk', 'Risk Analysis'],
     ['/projects', 'Projects'],
     ['/tenders', 'Tenders'],
     ['/milestones', 'Milestones'],

@@ -14,6 +14,7 @@ import ProjectEdit from './pages/ProjectEdit';
 import ProjectNew from './pages/ProjectNew';
 import ProjectsList from './pages/ProjectsList';
 import Register from './pages/Register';
+import RiskDashboard from './pages/RiskDashboard';
 import TenderDetails from './pages/TenderDetails';
 import TenderList from './pages/TenderList';
 import TenderNew from './pages/TenderNew';
@@ -63,6 +64,8 @@ export default function App() {
           {/* Stage 3.3 · unified payment dashboard (role-aware: officer manages,
               contractor sees own payments, auditor read-only). */}
           <Route path="/payments" element={<PaymentsDashboard />} />
+          {/* Stage 4.3 · AI Risk Dashboard & Alerts */}
+          <Route path="/risk" element={<RiskDashboard />} />
         </Route>
         </Routes>
       </CommandPaletteProvider>

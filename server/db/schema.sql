@@ -56,6 +56,54 @@ CREATE TABLE IF NOT EXISTS milestones (
   updated_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
 
+-- GovChain — Stage 3.1 · payment requests
+-- One row per payment request a contractor raises against a VERIFIED milestone.
+-- Stage 3.2 added the RELEASED status (simulated release, authorized -> released)
+-- plus the released_by / released_at audit columns. Statuses:
+--   REQUESTED -> AUTHORIZED -> RELEASED   (happy path)
+--   REQUESTED -> REJECTED                 (officer rejects)
+CREATE TABLE IF NOT EXISTS payments (
+  id            SERIAL PRIMARY KEY,
+  project_id    INTEGER        NOT NULL REFERENCES projects(id),
+  tender_id     INTEGER        REFERENCES tenders(id),
+  milestone_id  INTEGER        NOT NULL REFERENCES milestones(id),
+  contractor_id INTEGER        NOT NULL REFERENCES users(id),
+  amount        NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+  status        VARCHAR(20)    NOT NULL DEFAULT 'REQUESTED'
+                CHECK (status IN ('REQUESTED', 'AUTHORIZED', 'REJECTED')),
+  reason        TEXT,
+  requested_by  INTEGER        NOT NULL REFERENCES users(id),
+  authorized_by INTEGER        REFERENCES users(id),
+  released_by   INTEGER        REFERENCES users(id),
+  requested_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+  authorized_at TIMESTAMPTZ,
+  released_at   TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ    NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments (status);
+CREATE INDEX IF NOT EXISTS idx_payments_milestone ON payments (milestone_id);
+CREATE INDEX IF NOT EXISTS idx_payments_contractor ON payments (contractor_id);
+
+-- Stage 3.1 · payments keep the hash of their authorization transaction, exactly
+-- like projects/tenders/milestones. Payment events also stay in blockchain_events.
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS blockchain_tx_hash VARCHAR(66);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS blockchain_block_number BIGINT;
+
+-- GovChain — Stage 3.2 · simulated payment release columns for databases created
+-- before Stage 3.2 (the CREATE TABLE above already includes them on fresh
+-- databases; these ALTERs upgrade Stage 3.1 databases in place and are no-ops
+-- when the columns already exist).
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS released_by INTEGER REFERENCES users(id);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS released_at TIMESTAMPTZ;
+
+-- Widen the payment status CHECK for the RELEASED value (safe to re-run: the new
+-- value set is a superset of the Stage 3.1 one, so existing rows satisfy it).
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check;
+ALTER TABLE payments ADD CONSTRAINT payments_status_check
+  CHECK (status IN ('REQUESTED', 'AUTHORIZED', 'REJECTED', 'RELEASED'));
+
 -- GovChain — Stage 2.2 · blockchain audit ledger
 -- One row per application event that has to be recorded on the local EVM chain.
 -- PostgreSQL stays the source of truth for application data; this table only
@@ -112,4 +160,4 @@ ALTER TABLE milestones ADD CONSTRAINT milestones_status_check
 -- Same for the blockchain_events entity type, so 'milestone' events can be queued.
 ALTER TABLE blockchain_events DROP CONSTRAINT IF EXISTS blockchain_events_entity_type_check;
 ALTER TABLE blockchain_events ADD CONSTRAINT blockchain_events_entity_type_check
-  CHECK (entity_type IN ('project', 'tender', 'milestone'));
+  CHECK (entity_type IN ('project', 'tender', 'milestone', 'payment'));

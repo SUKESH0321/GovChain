@@ -5,6 +5,8 @@ import MilestoneForm from '../components/MilestoneForm';
 import MilestoneTimeline from '../components/MilestoneTimeline';
 import ProjectStageTimeline from '../components/ProjectStageTimeline';
 import BlockchainAuditHistory from '../components/BlockchainAuditHistory';
+import RiskAnalysisPanel from '../components/RiskAnalysisPanel';
+import { LEVEL_TONE } from '../components/RiskSignals';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
 
@@ -17,6 +19,7 @@ import { useToast } from '../context/ToastContext';
 import useBlockchainHistory from '../hooks/useBlockchainHistory';
 import useMilestones from '../hooks/useMilestones';
 import usePayments from '../hooks/usePayments';
+import useProjectRisk from '../hooks/useProjectRisk';
 import useWavesProfile from '../hooks/useWavesProfile';
 import { getProjectBlockchainHistory, getProjectById } from '../services/project.service';
 import { getTenders } from '../services/tender.service';
@@ -30,6 +33,9 @@ const TABS = [
   { key: 'activity', label: 'Activity' },
   // Stage 2.4 · the immutable on-chain audit trail of the project.
   { key: 'blockchain', label: 'Blockchain' },
+  // Stage 4.1 · deterministic AI risk & anomaly indicators, calculated from the
+  // existing project/tender/milestone/payment records when the tab is opened.
+  { key: 'risk', label: 'AI Risk & Anomaly' },
 ];
 
 function formatTime(value) {
@@ -89,6 +95,15 @@ export default function ProjectDetails() {
     error: chainError,
     refresh: refreshChainHistory,
   } = useBlockchainHistory(getProjectBlockchainHistory, project?.id, tab === 'blockchain');
+
+  // Stage 4.1 · the AI risk analysis is calculated on demand, only while its tab
+  // is open (same lazy pattern as the blockchain history above).
+  const {
+    analysis: riskAnalysis,
+    loading: riskLoading,
+    error: riskError,
+    refresh: refreshRiskAnalysis,
+  } = useProjectRisk(id, tab === 'risk' || tab === 'overview');
 
   const isOfficer = user.role === 'government_officer';
   const isAuditor = user.role === 'auditor';
@@ -284,6 +299,49 @@ export default function ProjectDetails() {
                 </div>
               )}
 
+              {/* Stage 4.3 · compact AI risk summary that links to the full
+                  Stage 4.1 analysis. Reuses the same risk-analysis endpoint —
+                  no duplicate calculation runs here, and the numbers are shown
+                  only once the lazy hook has actually loaded them. */}
+              {tab === 'overview' && (
+                <div className="gc-panel gc-animate-entrance gc-stagger-2">
+                  <div className="gc-panel-head">
+                    <span className="font-semibold">AI Risk Analysis</span>
+                  </div>
+                  <div className="gc-panel-body">
+                    {riskLoading ? (
+                      <p className="text-sm text-gray-500">Loading risk analysis…</p>
+                    ) : riskError ? (
+                      <p className="text-sm text-gray-500">
+                        Risk analysis unavailable. Open the AI Risk &amp; Anomaly tab to retry.
+                      </p>
+                    ) : riskAnalysis ? (
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 flex-wrap text-sm">
+                          <span className={`gc-badge ${LEVEL_TONE[riskAnalysis.riskLevel] || 'tone-slate'}`}>
+                            {riskAnalysis.riskLevel}
+                          </span>
+                          <span className="text-gray-600">
+                            Risk Level: {riskAnalysis.riskLevel} · Risk Score: {riskAnalysis.riskScore}
+                            {' · Signals: '}
+                            {(riskAnalysis.signals || []).length}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="gc-link text-sm font-medium"
+                          onClick={() => setTab('risk')}
+                        >
+                          View Full Analysis →
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No risk analysis available for this project.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {tab === 'tender' && (
                 <div className="gc-panel gc-animate-entrance gc-stagger-1">
                   <div className="gc-panel-head">
@@ -426,6 +484,20 @@ export default function ProjectDetails() {
                   onRetry={refreshChainHistory}
                   title="Blockchain audit history"
                   hint="Every GovChain action recorded for this project, its tenders and its milestones, read back from the local EVM chain in blockchain order."
+                />
+              )}
+
+              {/* Stage 4.1 · AI risk & anomaly analysis — deterministic,
+                  explainable indicators calculated on request from the project,
+                  tender, milestone and payment records. Nothing is stored and
+                  nothing is written on-chain. */}
+              {tab === 'risk' && (
+                <RiskAnalysisPanel
+                  analysis={riskAnalysis}
+                  loading={riskLoading}
+                  error={riskError}
+                  onRetry={refreshRiskAnalysis}
+                  title="AI risk analysis"
                 />
               )}
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { MilestoneBlockchainHistory } from './BlockchainAuditHistory';
+import MilestoneRiskPanel from './MilestoneRiskPanel';
 import StatusBadge from './ui/StatusBadge';
 import { requestPayment } from '../services/payment.service';
 
@@ -327,6 +328,13 @@ export default function MilestoneTimeline({
                     the contract event logs when the milestone is expanded. */}
                 <div className="mt-3" onClick={(e) => e.stopPropagation()}>
                   <MilestoneBlockchainHistory milestoneId={milestone.id} />
+                </div>
+
+                {/* Stage 4.2 · focused risk indicators for this milestone
+                    (amount, status, timeline and its payments), calculated on
+                    request by the backend risk engine. Read-only. */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <MilestoneRiskPanel milestoneId={milestone.id} />
                 </div>
               </div>
             )}

@@ -8,6 +8,7 @@ import ErrorState from '../components/ui/ErrorState';
 import LoadingState from '../components/ui/LoadingState';
 import StatusBadge from '../components/ui/StatusBadge';
 import { PaymentBlockchainHistory } from '../components/BlockchainAuditHistory';
+import PaymentRiskIndicator from '../components/PaymentRiskIndicator';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import usePayments from '../hooks/usePayments';
@@ -411,6 +412,14 @@ export default function PaymentsDashboard() {
             </div>
 
             <hr className="gc-divider" />
+
+            {/* Stage 4.3 · advisory risk indicators for this payment, derived
+                from the existing Stage 4.2 project analysis. Display only — it
+                never blocks, authorizes or releases a payment. */}
+            <div>
+              <p className="gc-eyebrow mb-2">AI risk</p>
+              <PaymentRiskIndicator payment={selected} />
+            </div>
 
             <div>
               <p className="gc-eyebrow mb-2">Payment history</p>
