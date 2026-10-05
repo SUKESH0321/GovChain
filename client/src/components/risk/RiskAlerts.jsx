@@ -26,26 +26,51 @@ export default function RiskAlerts({ items }) {
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-4 max-w-7xl">
       {alerts.map(({ entry, signal }) => (
-        <li key={entry.projectId} className="rounded border border-gray-200 px-3 py-2">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-800">
-                {entry.projectName}{' '}
-                <span className="font-normal text-gray-500">· Record #{entry.projectId}</span>
+        <li key={entry.projectId} className="relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:border-[#38BDF8]">
+          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gray-300" 
+               style={{ backgroundColor: signal.severity === 'HIGH' ? 'var(--gc-red)' : signal.severity === 'MEDIUM' ? 'var(--gc-amber)' : 'var(--gc-green)' }} 
+          />
+          
+          <div className="px-5 sm:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 pl-8">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-3 mb-2.5">
+                <span className={`px-2 py-0.5 rounded text-[12px] font-bold tracking-wider uppercase border
+                   ${signal.severity === 'HIGH' ? 'bg-red-50 text-red-700 border-red-200' 
+                     : signal.severity === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                     : 'bg-green-50 text-green-700 border-green-200'}`}>
+                  {signal.severity} SIGNAL
+                </span>
+                <span className="text-[12px] font-bold uppercase tracking-widest text-[#0057D9]">
+                  Score {entry.riskScore}/100
+                </span>
+                {entry.reviewed ? (
+                  <span className="text-[12px] font-bold uppercase tracking-widest text-green-600 pl-3 border-l border-gray-200">
+                    Reviewed
+                  </span>
+                ) : (
+                  <span className="text-[12px] font-bold uppercase tracking-widest text-amber-600 pl-3 border-l border-gray-200">
+                    Review Required
+                  </span>
+                )}
+              </div>
+              
+              <h3 className="text-xl font-bold text-[#0b2140] truncate max-w-full">
+                {entry.projectName}
+                <span className="ml-3 text-[14px] font-medium text-gray-500 tracking-wide">ID: #{entry.projectId}</span>
+              </h3>
+              <p className="mt-2 text-[15px] sm:text-base text-gray-700 leading-relaxed max-w-4xl">
+                {signal.message}
               </p>
-              <p className="mt-0.5 text-sm text-gray-600">{signal.message}</p>
             </div>
-            <span className={`gc-badge ${LEVEL_TONE[signal.severity] || 'tone-slate'} shrink-0`}>
-              {signal.severity}
-            </span>
+            
+            <div className="shrink-0 flex items-center md:flex-col md:items-end gap-3 justify-between pt-3 md:pt-0 border-t border-gray-100 md:border-0 mt-2 md:mt-0">
+              <p className="text-[13px] md:text-sm font-semibold text-gray-500 md:text-right w-full bg-slate-50 px-3 py-1.5 rounded-md border border-slate-100">
+                {entry.signalCount} anomaly indicator{entry.signalCount === 1 ? '' : 's'} total
+              </p>
+            </div>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Project risk {entry.riskLevel} · score {entry.riskScore}/100 · {entry.signalCount}{' '}
-            indicator{entry.signalCount === 1 ? '' : 's'}
-            {entry.reviewed ? ' · Reviewed' : ' · Requires review'}
-          </p>
         </li>
       ))}
     </ul>

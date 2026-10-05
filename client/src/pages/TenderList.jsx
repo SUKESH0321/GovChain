@@ -222,7 +222,7 @@ export default function TenderList() {
                   ))
                 )}
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 Only accounts with the Contractor role are listed.
               </p>
             </div>

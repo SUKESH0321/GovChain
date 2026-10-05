@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import ProjectStageTimeline, {
@@ -158,7 +158,7 @@ export default function OfficerDashboard() {
         const progress = stageProgress(p, tenders);
         return (
           <div className="min-w-[140px]">
-            <p className="text-xs font-semibold">{progress.label}</p>
+            <p className="text-sm font-semibold">{progress.label}</p>
             <div className="h-1.5 rounded-full mt-1" style={{ background: 'var(--gc-line)' }}>
               <div
                 className="h-1.5 rounded-full transition-all duration-500"
@@ -219,7 +219,7 @@ export default function OfficerDashboard() {
           <div className="gc-panel gc-animate-entrance gc-stagger-2">
             <div className="gc-panel-head">
               <span className="font-semibold">Payments</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-sm text-gray-500">
                 {payments
                   ? `${pendingPayments.length} pending · ${authorizedPayments.length} authorized`
                   : ''}
@@ -282,7 +282,7 @@ export default function OfficerDashboard() {
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
                 {PROJECT_STAGES.map((stage) => (
-                  <span key={stage.key} className="flex items-center gap-2 text-xs text-gray-600">
+                  <span key={stage.key} className="flex items-center gap-2 text-sm text-gray-600">
                     <span
                       className="inline-block w-3 h-3"
                       style={{ background: STAGE_TONES[stage.key] }}
@@ -297,7 +297,7 @@ export default function OfficerDashboard() {
           <div className="gc-panel">
             <div className="gc-panel-head">
               <span className="font-semibold">Project activity</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-sm text-gray-500">
                 {table.rows.length} of {projects.length} shown
               </span>
             </div>

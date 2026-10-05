@@ -21,7 +21,7 @@ import TenderNew from './pages/TenderNew';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Govchain">
       <CommandPaletteProvider>
         <Routes>
         <Route path="/" element={<Home />} />

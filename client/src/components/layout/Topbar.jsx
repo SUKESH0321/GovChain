@@ -33,7 +33,7 @@ export default function Topbar({ onMenu, onSearch }) {
           </button>
           <div className="hidden md:block text-right">
             <p className="text-sm font-semibold leading-tight">{user.name}</p>
-            <p className="text-xs text-gray-500 leading-tight capitalize">
+            <p className="text-sm text-gray-500 leading-tight capitalize">
               {user.role.replace('_', ' ')}
             </p>
           </div>

@@ -84,9 +84,9 @@ function PaymentTimeline({ payment }) {
       {steps.map((step) => (
         <li key={step.label} className="flex flex-wrap items-baseline gap-2">
           <span className="font-medium text-gray-800">{step.label}</span>
-          {step.at && <span className="text-xs text-gray-500">{formatDateTime(step.at)}</span>}
-          {step.by && <span className="text-xs text-gray-500">· by {step.by}</span>}
-          {step.extra && <span className="text-xs text-red-600">· {step.extra}</span>}
+          {step.at && <span className="text-sm text-gray-500">{formatDateTime(step.at)}</span>}
+          {step.by && <span className="text-sm text-gray-500">· by {step.by}</span>}
+          {step.extra && <span className="text-sm text-red-600">· {step.extra}</span>}
         </li>
       ))}
     </ol>
@@ -205,7 +205,7 @@ export default function PaymentsDashboard() {
       );
     }
     return (
-      <span className="text-xs text-gray-400">
+      <span className="text-sm text-gray-400">
         {payment.status === 'RELEASED' ? 'Released' : 'Rejected'}
       </span>
     );
@@ -266,7 +266,7 @@ export default function PaymentsDashboard() {
             <div className="gc-panel-head">
               <span className="font-semibold">Payment records</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-sm text-gray-500">
                   {filtered ? `${filtered.length} of ${payments.length} shown` : ''}
                 </span>
                 <select
@@ -382,7 +382,7 @@ export default function PaymentsDashboard() {
 
 
           {isOfficer && (
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-gray-500">
               Releasing a payment is a simulated demo action — no real funds are transferred.
             </p>
           )}

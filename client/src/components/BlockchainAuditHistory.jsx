@@ -147,23 +147,23 @@ function AuditRow({ record }) {
       </div>
 
       <dl className="mt-2 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-        <div>
+        <div className="min-w-0">
           <dt className="gc-eyebrow">Actor address</dt>
           <dd className="mt-0.5">
             <HashValue value={record.actor} />
           </dd>
         </div>
-        <div>
+        <div className="min-w-0">
           <dt className="gc-eyebrow">Blockchain time</dt>
           <dd className="mt-0.5">{formatChainTime(record)}</dd>
         </div>
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 min-w-0">
           <dt className="gc-eyebrow">Transaction hash</dt>
           <dd className="mt-0.5">
             <HashValue value={record.transactionHash} />
           </dd>
         </div>
-        <div>
+        <div className="min-w-0">
           <dt className="gc-eyebrow">GovChain user</dt>
           <dd className="mt-0.5">
             {record.actorUser
@@ -174,14 +174,14 @@ function AuditRow({ record }) {
           </dd>
         </div>
         {record.contractorId ? (
-          <div>
+          <div className="min-w-0">
             <dt className="gc-eyebrow">Contractor (GovChain id)</dt>
             <dd className="mt-0.5">#{record.contractorId}</dd>
           </div>
         ) : null}
         {/* Stage 3.1/3.2 · the amount carried by PaymentAuthorized/PaymentReleased. */}
         {record.amount !== null && record.amount !== undefined ? (
-          <div>
+          <div className="min-w-0">
             <dt className="gc-eyebrow">Amount (as recorded on-chain)</dt>
             <dd className="mt-0.5">₹{Number(record.amount).toLocaleString('en-IN')}</dd>
           </div>

@@ -346,7 +346,7 @@ export default function ProjectDetails() {
                 <div className="gc-panel gc-animate-entrance gc-stagger-1">
                   <div className="gc-panel-head">
                     <span className="font-semibold">Tenders</span>
-                    <span className="text-xs text-gray-500">{tenders.length} records</span>
+                    <span className="text-sm text-gray-500">{tenders.length} records</span>
                   </div>
                   <div className="gc-panel-body">
                     {tenders.length === 0 ? (
@@ -463,7 +463,7 @@ export default function ProjectDetails() {
                       </ol>
                     )}
                     <hr className="gc-divider" />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-gray-500">
                       Database activity is derived from record timestamps. The immutable audit
                       trail — with transaction hashes, blocks and actor addresses — is on the
                       Blockchain tab.
@@ -509,7 +509,7 @@ export default function ProjectDetails() {
               <div className="gc-panel gc-animate-entrance gc-stagger-2 hover:border-gray-300 transition-colors">
                 <div className="gc-panel-head">
                   <span className="font-semibold">Lifecycle</span>
-                  <span className="text-xs text-gray-500">derived from live records</span>
+                  <span className="text-sm text-gray-500">derived from live records</span>
                 </div>
                 <div className="gc-panel-body">
                   <ProjectStageTimeline project={project} tenders={tenders} />
@@ -547,7 +547,7 @@ export default function ProjectDetails() {
                     }
                   />
                   <hr className="gc-divider" />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-gray-500">
                     Values are read directly from the project, tender and milestone records.
                   </p>
                 </div>
@@ -646,7 +646,7 @@ export default function ProjectDetails() {
                 className="gc-textarea"
                 placeholder="Short reason for the rejection"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 The full reason stays off-chain; only a short reference is written to the
                 blockchain record.
               </p>

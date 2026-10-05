@@ -154,7 +154,7 @@ export default function AuditorDashboard() {
           <div className="gc-panel gc-animate-entrance gc-stagger-2">
             <div className="gc-panel-head">
               <span className="font-semibold">Programme register</span>
-              <span className="text-xs text-gray-500">Projects — read only</span>
+              <span className="text-sm text-gray-500">Projects — read only</span>
             </div>
             <div className="px-4 pt-4 flex flex-wrap gap-2">
               <div className="gc-search-input flex-1 min-w-[200px]">
@@ -194,7 +194,7 @@ export default function AuditorDashboard() {
           <div className="gc-panel">
             <div className="gc-panel-head">
               <span className="font-semibold">Contract award records</span>
-              <span className="text-xs text-gray-500">Tenders — read only</span>
+              <span className="text-sm text-gray-500">Tenders — read only</span>
             </div>
             <div className="p-4">
               {!tenders || tenders.length === 0 ? (
@@ -249,7 +249,7 @@ export default function AuditorDashboard() {
           <div className="gc-panel">
             <div className="gc-panel-head">
               <span className="font-semibold">Milestone status register</span>
-              <span className="text-xs text-gray-500">{milestones.length} records — read only</span>
+              <span className="text-sm text-gray-500">{milestones.length} records — read only</span>
             </div>
             <div className="p-4">
               {milestones.length === 0 ? (
@@ -297,7 +297,7 @@ export default function AuditorDashboard() {
           <div className="gc-panel">
             <div className="gc-panel-head">
               <span className="font-semibold">Payment records</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-sm text-gray-500">
                 {payments ? `${payments.length} records — read only` : 'read only'}
               </span>
             </div>

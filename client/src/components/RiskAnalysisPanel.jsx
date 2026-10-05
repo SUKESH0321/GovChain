@@ -51,8 +51,8 @@ function ProjectFinancialSummary({ summary }) {
 
       {summary.contractors && summary.contractors.length > 0 && (
         <div className="pt-1">
-          <p className="text-xs font-semibold text-gray-600 mb-1">Payment concentration</p>
-          <ul className="space-y-1 text-xs">
+          <p className="text-sm font-semibold text-gray-600 mb-1">Payment concentration</p>
+          <ul className="space-y-1 text-sm">
             {summary.contractors.map((contractor) => (
               <li
                 key={contractor.contractorId}
@@ -74,7 +74,7 @@ function ProjectFinancialSummary({ summary }) {
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-sm text-gray-500">
         Figures are read from the project, tender, milestone and payment records. Authorized and
         released amounts cover each payment once; rejected payments are never counted as an outflow.
       </p>
@@ -95,7 +95,7 @@ export default function RiskAnalysisPanel({
       <div className="gc-panel gc-animate-entrance">
         <div className="gc-panel-head">
           <span className="font-semibold">{title}</span>
-          <span className="text-xs text-gray-500">calculating from the current records…</span>
+          <span className="text-sm text-gray-500">calculating from the current records…</span>
         </div>
         <div className="gc-panel-body">
           <LoadingState rows={4} cols={3} />
@@ -142,7 +142,7 @@ export default function RiskAnalysisPanel({
     <div className="gc-panel gc-animate-entrance gc-stagger-1">
       <div className="gc-panel-head">
         <span className="font-semibold">{title}</span>
-        <span className="text-xs text-gray-500">
+        <span className="text-sm text-gray-500">
           deterministic rule engine · calculated on request · nothing stored
         </span>
       </div>

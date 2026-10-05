@@ -1,298 +1,244 @@
-﻿# GovChain
+# GovChain
 
-GovChain is a government spending and procurement transparency and monitoring platform. It records public projects, the tenders raised against them, the contractors assigned to those tenders, and the milestones each project is paid against, then exposes those records to the roles that need them.
+**GovChain** is a transparency and efficiency platform for government spending and procurement. It tracks public funds from their initial allocation down to the final contractor payment, ensuring verifiability through an immutable blockchain audit trail and proactive AI risk analysis. 
 
-Current stage: **Stage 1 - core platform (projects, tenders, milestones, role-based access)**. Blockchain, payments, AI and public-transparency modules are **Planned**, not implemented.
+The core lifecycle involves:
 
-## Overview
+`Government Officer -> Project -> Tender -> Contractor -> Milestones -> Verification -> Payment -> Blockchain Audit Trail -> AI Risk Analysis`
 
-GovChain exists so government project spending can be followed and audited in one place instead of across spreadsheets and email threads. Records are created by Government Officers, worked on by Contractors, and examined read-only by Auditors.
+GovChain combines state-of-the-art government project management, role-based access control, procurement and tender management, milestone tracking, comprehensive payment workflows, blockchain-backed auditability, and AI-assisted risk and anomaly analysis into a single unified platform. 
 
-The data model follows one lifecycle:
+The blockchain serves strictly as a trust and audit layer. Local AI algorithms intelligently identify project and financial risks, assisting human auditors without automatically declining workflows.
 
-```text
-Government
-   ↓
-Project
-   ↓
-Tender / Contract
-   ↓
-Milestones
-   ↓
-Verification             <- Planned
-   ↓
-Payment                  <- Planned
-   ↓
-Audit / Transparency
-```
+---
 
-Implemented today: Government -> Project -> Tender / Contract -> Milestones, plus read-only audit views. Verification, Payment and any on-chain audit layer are future stages.
+## Current Feature Set
 
-GovChain is intended to improve:
+### Authentication & Roles
+GovChain supports robust role-based access control (RBAC).
+- **Government Officer**: Manages projects, tenders, milestones, and authorizes/releases payments.
+- **Contractor**: Submits milestones and requests payments for assigned tenders.
+- **Auditor**: Read-only oversight role equipped with the Risk Dashboard and access to project histories. 
 
-- government spending transparency
-- procurement visibility
-- project monitoring
-- milestone tracking
-- auditability
-- anomaly/risk detection (Planned - today the UI only flags overdue milestones)
-- accountability
-
-Blockchain does not automatically eliminate corruption or guarantee truth. It is intended as an audit and trust layer over data whose accuracy still depends on the people and processes entering it.
-
-## Current Implementation
-
-Everything in this section exists in the repository today.
-
-### Frontend
-
-- React 18 with Vite 5 (JavaScript/JSX)
-- React Router 6 with protected, role-guarded routes
-- Tailwind CSS 3 plus a design-token layer in `client/src/index.css`
-- Role-based dashboards: `Dashboard.jsx` renders the Officer, Contractor or Auditor dashboard from the authenticated user role
-- Project management UI: searchable, sortable, filterable project list; create/edit views for officers; detail page with Overview / Tender / Milestones / Activity tabs
-- Tender management UI: tender list, tender details, create-tender form, and an assign-contractor flow
-- Milestone management UI: per-project milestone timeline with status controls and overdue flagging, plus a milestone register page
-- Interactive application interface: shared sidebar/topbar shell, command palette (`Ctrl`/`Cmd` + `K`), toasts, drawers, modals, tabs and sortable tables
-- Global animated GradientWaves background (`ogl` WebGL 2 canvas rendered behind the app shell)
-
-### Backend
-
-- Node.js with Express.js (CommonJS)
-- PostgreSQL via the `pg` driver (lazy connection pool on `DATABASE_URL`)
-- REST API mounted under `/api`
-- Authentication with `bcryptjs` password hashing (10 salt rounds) and JWT (`jsonwebtoken`, 7-day expiry)
-- Role-based access control via `authenticate` + `requireRole(...)` middleware, with an extra tender-assignment check on milestone updates
-
-### Authentication / Roles
-
-- Registration (`POST /api/auth/register`) accepts `name`, `email`, `password` and `role`; roles are self-selected at registration, there is no admin-approval step yet
-- Login (`POST /api/auth/login`) verifies the password hash and returns a JWT plus the user object; `GET /api/auth/me` returns the current user; logout is client-side (token discarded)
-- Government Officer: creates/updates projects, creates tenders, assigns contractors to tenders, creates milestones, updates any milestone status, lists users by role
-- Contractor: reads projects, tenders and milestones; updates milestone status only on projects where a tender is assigned to them
-- Auditor: read-only access to projects, tenders and milestones through a dedicated read-only console
 ### Project Management
-
-- Officers create projects (`POST /api/projects`) with `name`, `description`, `budget`, `location`, `start_date`, `end_date` and `status`; any authenticated user can list or view them
-- Officers update projects (`PUT /api/projects/:id`); update supports `name`, `description`, `location`, `start_date`, `end_date` and `status`
-- Project statuses: `PLANNED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`
-- UI: project list with search, status filter, sortable columns and expandable rows; detail page with Overview / Tender / Milestones / Activity tabs
+- **Lifecycle**: Complete control over project creation, updates, and status tracking (PLANNED, IN_PROGRESS, COMPLETED, CANCELLED).
+- **Data Attributes**: Real-world attributes including budget, geographic location, dates, and ownership records.
 
 ### Tender Management
-
-- Officers create tenders under a project (`POST /api/tenders` with `project_id`, `title`, `description`, `tender_amount`); any authenticated user can list or view tenders
-- Officers assign a contractor (`PUT /api/tenders/:id/assign` with `contractor_id`); assignment stores the contractor and sets status to `ASSIGNED`
-- Tender statuses: `OPEN`, `ASSIGNED`, `CLOSED` (no edit/close/re-tender endpoint exists yet)
-- UI: tender list with search, status filter and sorting; tender details; create-tender form; assign-contractor flow
+- **Workflow**: Tender creation, status tracking (OPEN, ASSIGNED, CLOSED), and contractor assignment.
+- **Financial Relationships**: Strong association between tenders and their parent projects, along with tracking total tender amounts.
 
 ### Milestone Management
+- **Lifecycle**: PENDING -> IN_PROGRESS -> SUBMITTED -> VERIFIED -> REJECTED -> COMPLETED.
+- **Actions**: Milestone creation, submission, structured verification, and rejection with reasons.
+- **Data**: Enforcement of milestone monetary amounts and due dates.
 
-- Officers create milestones under a project (`POST /api/projects/:projectId/milestones` with `title`, `description`, `amount`, `due_date`); any authenticated user can list a project's milestones (`GET /api/projects/:projectId/milestones`)
-- Status updates (`PUT /api/milestones/:id` with `status`) are allowed for officers on any project and for contractors assigned to a tender on that project; auditors cannot update
-- Milestone statuses: `PENDING`, `IN_PROGRESS`, `COMPLETED`
-- UI: per-project milestone timeline with status controls and overdue flagging, create-milestone modal, status-edit modal, and a milestone register page
+### Payment Management
+GovChain implements a complete simulated payment release system (it does not integrate with real banking infrastructure).
+- **Lifecycle**: `REQUESTED` -> `AUTHORIZED` -> `RELEASED`
+- **Actions**: Payment requests, authorizations, simulated release, or rejections. 
+- **Audit**: Maintained payment history, strict role-based access to payment controls (officers authorize vs. contractors request), and direct project/milestone payment associations.
+
+---
+
+## Blockchain Audit Trail
+
+GovChain utilizes a **REAL EVM-compatible blockchain** (powered by Hardhat, Solidity, and ethers.js). *Note: Hyperledger Fabric is NOT used.*
+
+The smart contract acts solely as a verifiable audit log. It emits highly detailed events providing an immutable history of off-chain database actions. These events are captured along with their transaction hashes, block numbers, actors, and timestamps.
+
+**Implemented Events:**
+- `ProjectCreated` / `ProjectUpdated`
+- `TenderCreated` / `TenderAssigned`
+- `MilestoneCreated` / `MilestoneSubmitted` / `MilestoneVerified` / `MilestoneRejected`
+- `PaymentAuthorized` / `PaymentReleased`
+
+### Blockchain Architecture
+
+GovChain follows a "PostgreSQL-first, Blockchain-second" architectural pattern. Transactions never block the primary user experience. The system retrieves actual transaction hashes and block numbers to prove chronological integrity.
+
+```text
+       Frontend (React)
+             ↓
+     Express Backend
+             ↓
+     PostgreSQL Database  ←–– source of truth for business logic
+             ↓
+     Blockchain Service   ←–– centralizes provider/signer/transaction handling
+             ↓
+     Hardhat EVM Network (localhost)
+             ↓
+  GovChain Solidity Contract ←–– immutable audit ledger
+```
+
+---
+
+## AI Risk Analysis & Dashboard
+
+GovChain features a deterministic, local Risk Analysis engine designed to be an **assistive decision-support system**. 
+
+**Important:** The AI is strictly advisory. It does **not** prove fraud, prove corruption, automatically accuse contractors, or automatically block payments. Human review remains central to the final workflow execution. 
+
+### Implemented Analysis Signals:
+The engine provides an explainable overall risk score across `LOW`, `MEDIUM`, or `HIGH` severities by evaluating:
+- **Tender Budget Anomalies**: Flagging tenders that dramatically under-cost or over-cost the allocated project budget.
+- **Milestone Allocation Anomalies**: Ensuring planned milestones logically align with the secured project budget and awarded tender.
+- **Payment / Milestone Ratios**: Detecting when payment amounts abnormally exceed the base milestone limits.
+- **Cumulative Payments**: Flagging when total authorized/released payments exceed the budget or tender amount.
+- **Multiple Payments per Milestone**: Notifying anomalous overlapping active payment requests.
+- **Workflow Inconsistencies**: Exposing when payments exist for unverified milestones.
+
+### Risk Dashboard
+The Risk Analysis page centrally displays these AI risk insights. It grants Auditors and Government Officers visibility into overall risk scores, severity-level indicators, underlying evidence (percentages, dates, identifiers), financial breakdowns across the platform, and localized project alerts.
+
+---
+
+## Application URL Structure
+
+The GovChain frontend employs the `/Govchain` base path prefix. API interfaces are neatly separated under the `/api` prefix on the backend.
+
+### Primary Frontend Routes
+*(Assuming development starts on port 5173)*
+- **Home**: `http://localhost:5173/Govchain`
+- **Dashboard**: `http://localhost:5173/Govchain/dashboard`
+- **Projects**: `http://localhost:5173/Govchain/projects`
+- **Payments**: `http://localhost:5173/Govchain/payments`
+- **Risk Analysis**: `http://localhost:5173/Govchain/risk`
+
+---
 
 ## Technology Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React.js |
-| Build Tool | Vite |
-| Styling | Tailwind CSS |
-| Backend | Node.js + Express.js |
-| Database | PostgreSQL |
-| Authentication | JWT |
-| Password Hashing | bcryptjs |
-| Blockchain | Hyperledger Fabric - Planned (no Fabric code exists yet) |
-| Smart Contracts | JavaScript Chaincode - Planned (no chaincode exists yet) |
-| AI | TensorFlow.js / rule-based detection - Planned (only overdue-milestone flag exists today) |
-| File Storage | Local initially / IPFS planned (no upload feature exists yet) |
-## Project Architecture
+**Frontend**
+- React 18
+- Tailwind CSS (Styling)
+- React Router (Routing)
+- GSAP & OGL (Animation & UI elements)
+- Vite (Build Tool)
+
+**Backend**
+- Node.js
+- Express.js
+- JSON Web Tokens (JWT AUTH)
+- bcryptjs (Hashing)
+- ethers.js (EVM interactions)
+
+**Database**
+- PostgreSQL (pg)
+
+**Blockchain**
+- Solidity
+- Hardhat (EVM Environment)
+
+---
+
+## Project Structure
 
 ```text
 GovChain/
-|-- client/
-|   |-- src/
-|   |   |-- components/
-|   |   |-- context/
-|   |   |-- pages/
-|   |   |-- services/
-|   |   |-- App.jsx
-|   |   |-- main.jsx
-|   |-- ...
-|-- server/
-|   |-- ...
-|   |-- ...
-|-- README.md
-|-- package.json
-|-- ...
+├── blockchain/          # Hardhat configuration, smart contracts, ethers.js deployments
+│   ├── contracts/       # GovChain.sol (The immutable audit ledger)
+│   ├── scripts/         # Deployment scripts
+│   └── hardhat.config.js
+├── client/              # React/Vite Frontend
+│   ├── src/
+│   │   ├── components/  # Reusable UI modules/AppLayout
+│   │   ├── pages/       # Dashboard, Risk, Payments, etc.
+│   │   └── App.jsx      # Frontend router definition
+├── server/              # Express/Node API Server
+│   ├── config/          # DB/Blockchain config parameters 
+│   ├── controllers/     # Express route handlers
+│   ├── db/              # PostgreSQL schema (schema.sql), init logic
+│   ├── models/          # DB queries/transactions 
+│   ├── routes/          # Express app router mounts 
+│   └── services/        # Business logic, Risk AI engine, Blockchain Service
+└── README.md
 ```
 
-Actual top-level entries are `client/`, `server/`, `README.md`, `package.json`, `package-lock.json`, `LICENSE`, `check-imports.ps1` and `.gitignore`. `client/src` contains `components/`, `context/`, `hooks/`, `pages/`, `services/`, `utils/`, `App.jsx`, `main.jsx` and `index.css`. `server/` contains `config/`, `controllers/`, `db/`, `middleware/`, `models/`, `routes/`, `services/`, `utils/` and `server.js`.
-## Environment Setup
+---
 
-Backend configuration lives in `server/.env`. The repository does not ship a committed env template file. Create `server/.env` locally:
+## Local Setup & Installation
+
+### Prerequisites
+- Node.js (v18 or higher)
+- npm
+- PostgreSQL (Running locally)
+*Note: Docker is not required.*
+
+### 1. Database Setup
+Create your local PostgreSQL database (e.g., `govchain_db`). The backend executes a schema script `server/db/schema.sql` automatically or via initialization scripts.
+
+### 2. Environment Variables
+Create a `.env` file in the `server` directory and define your variables. Use the placeholders below:
 
 ```env
+# server/.env
 PORT=5000
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/govchain
-JWT_SECRET=your_secret_key
+DATABASE_URL=postgres://user:password@localhost:5432/govchain_db
+JWT_SECRET=your_secret_here
+
+BLOCKCHAIN_ENABLED=true
+BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545
+# Copy the private key generated by your local Hardhat node
+BLOCKCHAIN_PRIVATE_KEY=your_private_key_here 
+# Copy the deployed address after running 'npm run deploy'
+GOVCHAIN_CONTRACT_ADDRESS=your_deployed_contract_here
 ```
 
-Actual credentials and secrets must not be committed. `server/.env` is git-ignored, so keep real passwords and secrets there and use placeholders in docs and screenshots.
-## Installation
+### 3. Startup Guide
 
-1. Install dependencies (first time only, from the project root):
+The application components must be started in three separate terminal windows. 
+
+**Terminal 1: Start the Blockchain Node**
+```bash
+cd blockchain
+npm install
+npm run node
+```
+*(Leave this node running. Copy the first private key and paste it into `server/.env` under `BLOCKCHAIN_PRIVATE_KEY`)*
+
+**Terminal 2: Deploy the Contract and Start the Backend**
+```bash
+cd blockchain
+npm run deploy
+```
+*(Copy the deployed contract address and paste it into `server/.env` under `GOVCHAIN_CONTRACT_ADDRESS`)*
 
 ```bash
-npm run install:all
+cd ../server
+npm install
+npm run db:init  # (Optional: Schema creates automatically on server start)
+npm start
 ```
 
-This runs `npm run install:server` (`cd server && npm install`) and `npm run install:client` (`cd client && npm install`).
-
-2. Set up PostgreSQL and create the database named in `DATABASE_URL`.
-
-3. Configure `server/.env` as shown above.
-
-4. Apply the schema:
-
+**Terminal 3: Start the Frontend**
 ```bash
-npm run db:init
-```
-
-5. Start the backend:
-
-```bash
-npm run dev:server
-```
-
-Backend: http://localhost:5000
-
-6. Start the frontend (in another terminal):
-
-```bash
-npm run dev:client
-```
-
-Frontend: http://localhost:5173 (the Vite dev server proxies `/api` to the backend).
-
-Or run both together from the root:
-
-```bash
+cd client
+npm install
 npm run dev
 ```
-## Database
 
-The schema (`server/db/schema.sql`) is idempotent and is also applied on server startup. Current tables:
+Visit the application at: `http://localhost:5173/Govchain`
 
-- users: accounts and roles (`government_officer`, `contractor`, `auditor`)
-- projects: government projects linked to the creating user
-- tenders: tenders raised against a project, with optional assigned contractor
-- milestones: deliverables/instalments per project
+---
 
-There are no verification, payment, blockchain, AI or audit-log tables yet.
-## API Overview
+## User Workflow Example
 
-All routes are mounted under `/api` and exchange JSON. Only endpoints that exist in the codebase are listed.
+1. **Government Officer**: Logs in, clicks "Create Project", and provisions a new infrastructure project. 
+2. **Government Officer**: Creates an associated Tender for the project and assigns a **Contractor**.
+3. **Government Officer**: Defines Milestones ensuring completion criteria and budget adherence.
+4. **Contractor**: Logs in, reviews assigned tenders, and submits a Milestone (e.g., "Foundation Level").
+5. **Government Officer/Auditor**: Reviews the work submitted and sets the Milestone as `VERIFIED`.
+6. **Contractor**: Requests payment for the verified milestone.
+7. **Government Officer**: Authorizes the payment inside the Payments dashboard. (Transitions state to `AUTHORIZED`).
+8. **Government Officer**: Officially triggers the payment release (Transitions state to `RELEASED`).
+9. **System (Blockchain)**: Every major action silently records transaction hashes natively on the local EVM. 
+10. **System (Risk AI)**: The AI Engine continuously analyzes real-time payments vs. milestone budgets and updates the centralized Risk Dashboard for Auditors to oversee.
 
-### Authentication
+---
 
-```text
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me
-```
-
-### Projects
-
-```text
-POST /api/projects
-GET  /api/projects
-GET  /api/projects/:id
-PUT  /api/projects/:id
-GET  /api/projects/:projectId/milestones
-POST /api/projects/:projectId/milestones
-```
-
-### Tenders
-
-```text
-GET  /api/tenders
-GET  /api/tenders/:id
-POST /api/tenders
-PUT  /api/tenders/:id/assign
-```
-
-### Milestones
-
-```text
-GET  /api/projects/:projectId/milestones
-POST /api/projects/:projectId/milestones
-PUT  /api/milestones/:id
-```
-## Role Access
-
-Authorization is enforced by Express middleware, not by the UI.
-
-| Feature | Government Officer | Contractor | Auditor |
-|---|---|---|---|
-| View projects | Yes | Yes | Yes |
-| Create projects | Yes | No | No |
-| Manage tenders | Yes - create and assign contractors | No - read-only | No - read-only |
-| Manage milestones | Yes - create and update any status | Limited - update status only on assigned projects | No - read-only |
-| Audit/read-only access | Yes | No | Yes |
-## UI / UX
-
-- Role-specific navigation and dashboards for Government Officers, Contractors and Auditors
-- Interactive dashboards with project, tender and milestone views
-- Project views with Overview / Tender / Milestones / Activity tabs
-- Tender views with details and contractor assignment
-- Milestone tracking with per-project timeline, status controls and overdue flagging
-- Responsive UI with shared sidebar/topbar shell, drawers, modals, tabs and sortable tables
-- Animated GradientWaves global background (WebGL canvas behind the app shell)
-- Blue / sky-blue / white visual theme
-## Development Status
-
-### Implemented
-
-- Project initialization: React/Vite frontend, Express backend and PostgreSQL pool
-- Registration, login, bcryptjs password hashing, JWT authentication and role-based access control
-- Project management: officers create/update, any authenticated user can view
-- Tender management: officers create and assign contractors, any authenticated user can view
-- Milestone management: officers create, officers or assigned contractors update status, any authenticated user can view
-- Role-based dashboards plus list/detail screens for projects, tenders and milestones
-- Shared authenticated shell, command palette, toasts, drawers/modals/tabs and searchable sortable tables
-- Global animated GradientWaves background
-- Idempotent schema applied on startup and through `npm run db:init`
-
-### Planned
-
-- Hyperledger Fabric integration (Coming Soon)
-- Smart contracts (Coming Soon)
-- Payment workflow (Coming Soon)
-- AI anomaly detection (Coming Soon)
-- Transparency/audit enhancements (Coming Soon)
-- IPFS integration (Coming Soon)
-## Roadmap
-
-1. Frontend and Core Backend - Implemented (projects, tenders, milestones, roles, dashboards)
-2. Blockchain - Planned
-3. Payments - Planned
-4. AI - Planned
-5. Transparency - Planned
-6. Testing and Deployment - Planned
-## Security Notes
-
-- Passwords are hashed with bcryptjs
-- JWT authentication is used (7-day expiry; token sent as `Authorization: Bearer <token>`)
-- Role-based access control is enforced server-side
-- Secrets belong in `server/.env` and must not be committed
-- Sensitive information should not be placed on-chain
-- Blockchain should be treated as an audit/trust layer rather than a guarantee that underlying data is truthful
-## Important Design Principles
-
-- Blockchain is an audit/trust layer (Planned).
-- AI flags anomalies/risk; it does not automatically determine fraud (Planned).
-- Sensitive citizen information should remain off-chain.
-- Payment execution should require appropriate verification/authorization (Planned).
-- Transparency should expose useful public information without exposing sensitive data (Planned).
+## Security Model
+- **Authentication**: Stateless robust JSON Web Tokens (JWT) distributed upon login.
+- **Passwords**: Securely salted and hashed utilizing `bcryptjs`.
+- **Role-Based Routing**: Strict frontend and backend access control checks determining read/write properties according to the `government_officer`, `contractor`, or `auditor` role.
+- **Immutability**: Crucial interactions write an idempotent record into the Ethereum Smart Contract for auditable verifiability. 

@@ -61,7 +61,7 @@ export default function MilestoneRiskPanel({ milestoneId }) {
   if (loading) {
     return (
       <div className="mt-3">
-        <p className="text-xs text-gray-500 mb-2">Calculating milestone risk…</p>
+        <p className="text-sm text-gray-500 mb-2">Calculating milestone risk…</p>
         <LoadingState rows={3} cols={2} />
       </div>
     );
@@ -70,7 +70,7 @@ export default function MilestoneRiskPanel({ milestoneId }) {
   if (error) {
     return (
       <div className="mt-3">
-        <p className="text-xs text-gray-500 mb-2">Milestone risk</p>
+        <p className="text-sm text-gray-500 mb-2">Milestone risk</p>
         <ErrorState message={error} onRetry={retry} />
       </div>
     );
@@ -99,7 +99,7 @@ export default function MilestoneRiskPanel({ milestoneId }) {
     <div className="mt-3 rounded border border-gray-200">
       <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
         <span className="text-sm font-semibold text-gray-800">Milestone risk</span>
-        <span className="text-xs text-gray-500">
+        <span className="text-sm text-gray-500">
           calculated on request · project context: {analysis.projectRiskLevel} ({analysis.projectRiskScore}/100)
         </span>
       </div>
@@ -109,7 +109,7 @@ export default function MilestoneRiskPanel({ milestoneId }) {
         <SummaryGrid rows={rows} />
 
         <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2">
-          <p className="text-xs text-amber-800">
+          <p className="text-sm text-amber-800">
             Risk indicator — requires review. Not confirmed fraud or corruption.
           </p>
         </div>

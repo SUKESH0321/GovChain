@@ -33,7 +33,7 @@ export default function Health() {
           {error ? (
             <ErrorState message={error} />
           ) : health ? (
-            <pre className="bg-slate-50 border rounded p-3 text-xs overflow-x-auto font-mono">
+            <pre className="bg-slate-50 border rounded p-3 text-sm overflow-x-auto font-mono">
               {JSON.stringify(health, null, 2)}
             </pre>
           ) : (
@@ -43,7 +43,7 @@ export default function Health() {
           {chain && (
             <>
               <h2 className="text-sm font-semibold mt-6 mb-2">Blockchain status</h2>
-              <pre className="bg-slate-50 border rounded p-3 text-xs overflow-x-auto font-mono">
+              <pre className="bg-slate-50 border rounded p-3 text-sm overflow-x-auto font-mono">
                 {JSON.stringify(chain, null, 2)}
               </pre>
             </>

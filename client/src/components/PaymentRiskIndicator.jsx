@@ -42,7 +42,7 @@ export default function PaymentRiskIndicator({ payment }) {
   }, [payment && payment.id, payment && payment.project_id]);
 
   if (state.loading) {
-    return <p className="text-xs text-gray-500">Checking payment risk indicators…</p>;
+    return <p className="text-sm text-gray-500">Checking payment risk indicators…</p>;
   }
 
   if (state.error) {
@@ -51,7 +51,7 @@ export default function PaymentRiskIndicator({ payment }) {
 
   if (!state.signals || state.signals.length === 0) {
     return (
-      <p className="text-xs text-gray-500">
+      <p className="text-sm text-gray-500">
         No payment risk indicators for this payment in the current records.
       </p>
     );
@@ -69,12 +69,12 @@ export default function PaymentRiskIndicator({ payment }) {
       </div>
       <p className="mt-1 text-sm text-gray-600">{top.message}</p>
       {state.signals.length > 1 && (
-        <p className="mt-0.5 text-xs text-gray-500">
+        <p className="mt-0.5 text-sm text-gray-500">
           + {state.signals.length - 1} further indicator{state.signals.length - 1 === 1 ? '' : 's'}{' '}
           for this payment — see the project risk analysis.
         </p>
       )}
-      <p className="mt-1 text-xs text-gray-500">
+      <p className="mt-1 text-sm text-gray-500">
         Advisory only — requires human review and never blocks a payment.
       </p>
     </div>

@@ -48,7 +48,7 @@ export default function BlockchainStatusBadge() {
 
   if (!status) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs">
+      <span className="inline-flex items-center gap-1.5 text-sm">
         <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
         <span className="text-gray-400">Blockchain…</span>
       </span>
@@ -64,7 +64,7 @@ export default function BlockchainStatusBadge() {
     : `Blockchain unavailable${status.reason ? `: ${status.reason}` : ''}`;
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs" title={title}>
+    <span className="inline-flex items-center gap-1.5 text-sm" title={title}>
       <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
       <span className="text-gray-500">Blockchain</span>
       <span className={`font-medium ${textClass}`}>{label}</span>

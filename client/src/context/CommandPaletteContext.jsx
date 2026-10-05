@@ -149,7 +149,7 @@ export function CommandPaletteProvider({ children }) {
                           <span className="gc-badge tone-slate">{item.type}</span>
                           <span className="font-medium truncate">{item.title}</span>
                         </span>
-                        <span className="text-xs text-gray-500 truncate">{item.subtitle}</span>
+                        <span className="text-sm text-gray-500 truncate">{item.subtitle}</span>
                       </button>
                     </li>
                   ))}

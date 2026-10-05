@@ -110,7 +110,7 @@ export default function ContractorDashboard() {
                             <Link to={`/projects/${m.project_id}`} className="gc-link">
                               {m.title}
                             </Link>
-                            <span className="text-xs font-semibold text-red-700">
+                            <span className="text-sm font-semibold text-red-700">
                               Overdue {m.due_date}
                             </span>
                           </li>
@@ -134,9 +134,9 @@ export default function ContractorDashboard() {
                               <Link to={`/projects/${m.project_id}`} className="gc-link">
                                 {m.title}
                               </Link>
-                              <span className="text-xs text-gray-500 ml-2">{m.project_name}</span>
+                              <span className="text-sm text-gray-500 ml-2">{m.project_name}</span>
                             </div>
-                            <span className="text-xs font-medium">{m.due_date}</span>
+                            <span className="text-sm font-medium">{m.due_date}</span>
                           </li>
                         ))}
                       </ul>
@@ -148,7 +148,7 @@ export default function ContractorDashboard() {
               <div className="gc-panel gc-animate-entrance gc-stagger-3">
                 <div className="gc-panel-head">
                   <span className="font-semibold">My work</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-sm text-gray-500">
                     {view.assignedTenders.length} tenders awarded
                   </span>
                 </div>
@@ -169,7 +169,7 @@ export default function ContractorDashboard() {
                             <Link to={`/tenders/${tender.id}`} className="gc-link">
                               {tender.title}
                             </Link>
-                            <p className="text-xs text-gray-500 truncate">
+                            <p className="text-sm text-gray-500 truncate">
                               {tender.project_name} · ₹
                               {Number(tender.tender_amount).toLocaleString('en-IN')}
                             </p>
@@ -199,7 +199,7 @@ export default function ContractorDashboard() {
                           <Link to={`/projects/${project.id}`} className="gc-link">
                             {project.name}
                           </Link>
-                          <p className="text-xs text-gray-500">{project.location || '—'}</p>
+                          <p className="text-sm text-gray-500">{project.location || '—'}</p>
                         </li>
                       ))}
                     </ul>

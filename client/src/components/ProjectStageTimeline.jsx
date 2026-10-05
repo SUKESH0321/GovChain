@@ -48,7 +48,7 @@ export default function ProjectStageTimeline({ project, tenders = [] }) {
         })}
       </div>
       {cancelled && (
-        <p className="mt-2 text-xs font-semibold text-red-700">
+        <p className="mt-2 text-sm font-semibold text-red-700">
           This project was cancelled — execution has halted.
         </p>
       )}

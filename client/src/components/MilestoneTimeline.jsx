@@ -71,17 +71,17 @@ function PaymentRequestControl({ milestone, existingPayment }) {
             ₹{Number(current.amount).toLocaleString('en-IN')}
           </span>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 mt-1">
           Requested: {fmt(current.requested_at)} · Authorized: {fmt(current.authorized_at)} ·
           Released: {fmt(current.released_at)}
         </p>
         {current.status === 'RELEASED' && (
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-sm text-gray-400 mt-0.5">
             Simulated release (demo) — no real funds were transferred.
           </p>
         )}
         {current.status === 'REJECTED' && current.reason && (
-          <p className="text-xs text-red-600 mt-0.5">Reason: {current.reason}</p>
+          <p className="text-sm text-red-600 mt-0.5">Reason: {current.reason}</p>
         )}
       </div>
     );
@@ -98,7 +98,7 @@ function PaymentRequestControl({ milestone, existingPayment }) {
         >
           Request payment
         </button>
-        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+        {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
       </div>
     );
   }
@@ -134,7 +134,7 @@ function PaymentRequestControl({ milestone, existingPayment }) {
       >
         Cancel
       </button>
-      {error && <p className="text-xs text-red-600 w-full">{error}</p>}
+      {error && <p className="text-sm text-red-600 w-full">{error}</p>}
     </form>
   );
 }
@@ -200,9 +200,9 @@ export default function MilestoneTimeline({
                     {milestone.title}
                   </span>
                   <StatusBadge status={milestone.status} />
-                  {overdue && <span className="text-xs font-bold text-red-700">OVERDUE</span>}
+                  {overdue && <span className="text-sm font-bold text-red-700">OVERDUE</span>}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   Amount {Number(milestone.amount).toLocaleString('en-IN')} · Due{' '}
                   {milestone.due_date || '—'}
                 </p>

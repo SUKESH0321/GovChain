@@ -143,38 +143,54 @@ export function formatEvidenceValue(key, value) {
 
 
 // One risk signal card: rule family, explanation, severity and the exact numbers
-// that triggered it (plus any related signals that describe the same fact).
 export function RiskSignalCard({ signal }) {
   return (
-    <li className="rounded border border-gray-200">
-      <div className="flex items-start justify-between gap-3 px-3 py-2 border-b border-gray-100">
+    <li className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm transition-all hover:shadow-md">
+      <div className={`h-1 w-full ${LEVEL_BAR[signal.severity] || 'bg-gray-300'}`} />
+      
+      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-gray-500">
-            {CATEGORY_LABELS[signal.category] ? `${CATEGORY_LABELS[signal.category]} · ` : ''}
-            {SIGNAL_LABELS[signal.type] || signal.type}
+          <p className="text-[12px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+            {CATEGORY_LABELS[signal.category] ? `${CATEGORY_LABELS[signal.category]} INDICATOR` : 'RISK INDICATOR'}
           </p>
-          <p className="text-sm text-gray-800">{signal.message}</p>
+          <span className={`px-2.5 py-0.5 rounded text-[12px] font-bold tracking-wider uppercase border
+               ${signal.severity === 'HIGH' ? 'bg-red-50 text-red-700 border-red-200' 
+                 : signal.severity === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                 : 'bg-green-50 text-green-700 border-green-200'}`}>
+            {signal.severity}
+          </span>
         </div>
-        <span className={`gc-badge ${SEVERITY_TONE[signal.severity] || 'tone-slate'}`}>
-          {signal.severity}
-        </span>
       </div>
-      <div className="px-3 py-2 grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs">
-        {Object.entries(signal.evidence || {}).map(([key, value]) => (
-          <div key={key} className="flex justify-between gap-3">
-            <span className="text-gray-500">{EVIDENCE_LABELS[key] || key}</span>
-            <span className="font-medium text-gray-800 text-right">
-              {formatEvidenceValue(key, value)}
-            </span>
+      
+      <div className="px-5 py-5">
+        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">{SIGNAL_LABELS[signal.type] || signal.type}</h3>
+        <p className="text-[15px] text-gray-700 leading-relaxed mb-5 max-w-3xl">{signal.message}</p>
+        
+        {signal.evidence && Object.keys(signal.evidence).length > 0 && (
+          <div className="bg-slate-50/50 rounded-md border border-slate-200 p-4">
+            <h4 className="text-[12px] font-bold text-slate-500 uppercase tracking-widest mb-3">Supporting Evidence Data</h4>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+              {Object.entries(signal.evidence).map(([key, value]) => (
+                <div key={key} className="flex flex-col sm:flex-row justify-between sm:items-center gap-1 sm:gap-3 pb-2 border-b border-gray-100 last:border-0 last:pb-0 sm:[&:nth-last-child(-n+2)]:border-0 sm:[&:nth-last-child(-n+2)]:pb-0 lg:[&:nth-last-child(-n+3)]:border-0 lg:[&:nth-last-child(-n+3)]:pb-0">
+                  <span className="text-[14px] text-gray-500 font-medium">{EVIDENCE_LABELS[key] || key}</span>
+                  <span className="text-[14px] font-semibold text-gray-900">
+                    {formatEvidenceValue(key, value)}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+        )}
       </div>
+
       {signal.relatedSignals && signal.relatedSignals.length > 0 && (
-        <div className="px-3 pb-2 text-xs text-gray-500">
-          Same fact also detected through:{' '}
-          {signal.relatedSignals
-            .map((related) => SIGNAL_LABELS[related.type] || related.type)
-            .join(', ')}
+        <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100 text-[13px] text-gray-500 flex flex-wrap gap-2 items-center">
+          <span className="font-semibold text-gray-600">Cross-verified via:</span>
+          {signal.relatedSignals.map((related, i) => (
+             <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600 font-medium">
+               {SIGNAL_LABELS[related.type] || related.type}
+             </span>
+          ))}
         </div>
       )}
     </li>
@@ -201,45 +217,72 @@ export function RiskSignalList({ signals, emptyTitle = 'No risk indicators', emp
   );
 }
 
-// Risk level + score + severity/category breakdown.
 export function RiskScoreBlock({ analysis, compact = false }) {
   const level = analysis.riskLevel;
   const score = analysis.riskScore || 0;
   const breakdown = analysis.scoreBreakdown || {};
 
   return (
-    <div className="flex items-start justify-between gap-4 flex-wrap">
-      <div>
-        <p className="gc-eyebrow">Risk level</p>
-        <div className="mt-1 flex items-center gap-2">
-          <span className={`gc-badge ${LEVEL_TONE[level] || 'tone-slate'}`}>{level}</span>
-          <span className="text-sm text-gray-600">
-            Risk score <span className="font-semibold">{score}</span> / 100
-          </span>
+    <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 p-5 sm:p-6 bg-white rounded-xl border border-gray-200 shadow-sm ${compact ? 'md:flex-col items-start' : ''}`}>
+      
+      {/* Left side: Gauge & Core Info */}
+      <div className="flex items-center gap-6">
+        <div className="relative shrink-0 flex items-center justify-center w-24 h-24 rounded-full border-[5px] border-gray-100 bg-gray-50 shadow-inner">
+          <div className="text-center mt-1">
+            <span className={`block text-[28px] leading-tight font-black ${level === 'HIGH' ? 'text-red-700' : level === 'MEDIUM' ? 'text-amber-600' : 'text-green-600'}`}>
+              {score}
+            </span>
+            <span className="text-[12px] font-bold text-gray-500 uppercase tracking-widest relative -top-1">Score</span>
+          </div>
+          <svg className="absolute inset-0 w-full h-full transform -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+             <circle cx="50" cy="50" r="45" fill="transparent" stroke="currentColor" strokeWidth="10" 
+               className={`${level === 'HIGH' ? 'text-red-500' : level === 'MEDIUM' ? 'text-amber-400' : 'text-green-400'}`}
+               strokeDasharray="283" strokeDashoffset={283 - (283 * score) / 100} strokeLinecap="round" />
+          </svg>
         </div>
-        <p className="mt-2 text-sm text-gray-700">{LEVEL_HEADLINE[level] || LEVEL_HEADLINE.LOW}</p>
-      </div>
-      <div className="min-w-[180px] flex-1">
-        <div className="h-2 rounded bg-gray-100 overflow-hidden">
-          <div
-            className={`h-full ${LEVEL_BAR[level] || 'bg-gray-400'}`}
-            style={{ width: `${Math.max(score, 4)}%` }}
-          />
-        </div>
-        <p className="mt-2 text-xs text-gray-500">
-          {breakdown.signals || 0} indicator{breakdown.signals === 1 ? '' : 's'} — HIGH{' '}
-          {(breakdown.bySeverity && breakdown.bySeverity.HIGH) || 0} · MEDIUM{' '}
-          {(breakdown.bySeverity && breakdown.bySeverity.MEDIUM) || 0} · LOW{' '}
-          {(breakdown.bySeverity && breakdown.bySeverity.LOW) || 0}
-          {(breakdown.mergedSignals || 0) > 0 && ` · ${breakdown.mergedSignals} merged`}
-        </p>
-        {!compact && breakdown.byCategory && (
-          <p className="mt-1 text-xs text-gray-500">
-            {Object.entries(breakdown.byCategory)
-              .filter(([, count]) => count > 0)
-              .map(([category, count]) => `${CATEGORY_LABELS[category] || category} ${count}`)
-              .join(' · ') || 'No signal in any category'}
+
+        <div className="flex-1">
+          <p className="text-[12px] font-bold uppercase tracking-[0.15em] text-gray-500 mb-2">Overall Assessment</p>
+          <div className="flex flex-wrap items-center gap-3 mb-2">
+            <span className={`px-2.5 py-0.5 rounded text-[13px] font-bold tracking-wider uppercase border shadow-sm
+               ${level === 'HIGH' ? 'bg-red-50 text-red-700 border-red-200' 
+                 : level === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-200' 
+                 : 'bg-green-50 text-green-700 border-green-200'}`}>
+              {level} RISK
+            </span>
+          </div>
+          <p className="text-[14px] font-medium text-gray-800 leading-snug max-w-xs">
+            {LEVEL_HEADLINE[level] || LEVEL_HEADLINE.LOW}
           </p>
+        </div>
+      </div>
+
+      {/* Right side: Detailed Breakdown */}
+      <div className={`w-full ${compact ? 'md:w-full' : 'md:max-w-xs xl:max-w-sm'} shrink-0 bg-slate-50/80 rounded-lg border border-slate-200 p-4`}>
+        <h4 className="text-[12px] font-bold text-slate-500 uppercase tracking-widest mb-3">Signal Breakdown</h4>
+        <div className="grid grid-cols-3 gap-3 text-center divide-x divide-slate-200/60 transition-all">
+          <div>
+            <span className="block text-[22px] font-bold text-red-600">{(breakdown.bySeverity && breakdown.bySeverity.HIGH) || 0}</span>
+            <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">High</span>
+          </div>
+          <div>
+            <span className="block text-[22px] font-bold text-amber-600">{(breakdown.bySeverity && breakdown.bySeverity.MEDIUM) || 0}</span>
+            <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Medium</span>
+          </div>
+          <div>
+            <span className="block text-[22px] font-bold text-green-600">{(breakdown.bySeverity && breakdown.bySeverity.LOW) || 0}</span>
+            <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Low</span>
+          </div>
+        </div>
+        {!compact && breakdown.byCategory && (
+          <div className="mt-4 pt-3 border-t border-slate-200/70 text-center px-2">
+             <p className="text-[12px] font-medium text-slate-600 leading-tight">
+               {Object.entries(breakdown.byCategory)
+                 .filter(([, count]) => count > 0)
+                 .map(([category, count]) => `${CATEGORY_LABELS[category] || category} (${count})`)
+                 .join(' · ') || 'No signals detected'}
+             </p>
+          </div>
         )}
       </div>
     </div>
