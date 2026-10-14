@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useNavigate } from 'react-router-dom';
 
 import { loadOverview } from '../utils/stats';
+import { useAuth } from './AuthContext';
 
 const CommandPaletteContext = createContext(null);
 
@@ -9,6 +10,7 @@ const CommandPaletteContext = createContext(null);
 // loaded from the live APIs, and navigates to the selected record.
 export function CommandPaletteProvider({ children }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [data, setData] = useState(null);
@@ -20,7 +22,13 @@ export function CommandPaletteProvider({ children }) {
     setQuery('');
   }, []);
 
+  // The palette searches authenticated APIs, so close it and ignore the
+  // shortcut when nobody is logged in (login, register, home).
   useEffect(() => {
+    if (!user) {
+      setOpen(false);
+      return undefined;
+    }
     function onKey(event) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
@@ -30,7 +38,7 @@ export function CommandPaletteProvider({ children }) {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!open) {

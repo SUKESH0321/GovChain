@@ -4,12 +4,10 @@ import { Link, Navigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import useWavesProfile from '../hooks/useWavesProfile';
 
 export default function Login() {
   const { user, loading, login } = useAuth();
   const toast = useToast();
-  const waves = useWavesProfile();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

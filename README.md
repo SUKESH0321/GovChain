@@ -93,6 +93,16 @@ The Risk Analysis page centrally displays these AI risk insights. It grants Audi
 
 ---
 
+## Global Design System
+
+GovChain implements a strict, unified design language to ensure a professional, presentation-ready platform:
+- **Typography & Color**: Enforces a strict palette of structural constants (e.g., `--gc-navy`, `--gc-blue`) and robust typography to establish clear data hierarchy and readability.
+- **Component Standardization**: Features a comprehensive global button system (`gc-btn`, `gc-btn-primary`, `gc-btn-outline`) with enforced layout panels, status badges, and data tables.
+- **Visual Micro-Interactions**: Incorporates background ambient animations (Gradient Waves, Target Cursor, Click Sparks) powered by GSAP and OGL, preserving strict frame boundaries to maintain high performance without intruding on the data flow.
+- **Role-Aware Consistency**: Whether acting as an Officer, Contractor, or Auditor, the user experience maintains visual coherence across differing permissions logic.
+
+---
+
 ## Application URL Structure
 
 The GovChain frontend employs the `/Govchain` base path prefix. API interfaces are neatly separated under the `/api` prefix on the backend.

@@ -14,7 +14,6 @@ import usePayments from '../hooks/usePayments';
 import useProjects from '../hooks/useProjects';
 import useTable from '../hooks/useTable';
 import useTenders from '../hooks/useTenders';
-import useWavesProfile from '../hooks/useWavesProfile';
 import { loadAllMilestones } from '../utils/stats';
 
 const PROJECT_STATUSES = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
@@ -37,7 +36,6 @@ function StatCell({ label, value, prefix = '', delay = 1 }) {
 export default function AuditorDashboard() {
   const { projects, loading, error, refresh } = useProjects();
   const { tenders } = useTenders();
-  const waves = useWavesProfile();
   const [milestones, setMilestones] = useState([]);
 
   // Stage 3.1/3.2 · read-only view of every payment request/authorization/release

@@ -20,7 +20,6 @@ import useBlockchainHistory from '../hooks/useBlockchainHistory';
 import useMilestones from '../hooks/useMilestones';
 import usePayments from '../hooks/usePayments';
 import useProjectRisk from '../hooks/useProjectRisk';
-import useWavesProfile from '../hooks/useWavesProfile';
 import { getProjectBlockchainHistory, getProjectById } from '../services/project.service';
 import { getTenders } from '../services/tender.service';
 
@@ -55,7 +54,6 @@ export default function ProjectDetails() {
   const { id } = useParams();
   const { user } = useAuth();
   const toast = useToast();
-  const waves = useWavesProfile();
 
   const [project, setProject] = useState(null);
   const [tenders, setTenders] = useState([]);

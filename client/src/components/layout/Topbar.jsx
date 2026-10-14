@@ -2,6 +2,9 @@ import { useAuth } from '../../context/AuthContext';
 
 import BlockchainStatusBadge from '../BlockchainStatusBadge';
 
+const SHORTCUT =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
+
 export default function Topbar({ onMenu, onSearch }) {
   const { user } = useAuth();
 
@@ -29,7 +32,7 @@ export default function Topbar({ onMenu, onSearch }) {
           >
             <span className="text-gray-400 font-normal mr-1">⌕</span>
             <span className="text-gray-600 font-medium">Search records...</span>
-            <span className="gc-kbd font-mono tracking-tighter ml-3 border-gray-200">⌘K</span>
+            <span className="gc-kbd font-mono tracking-tighter ml-3 border-gray-200">{SHORTCUT}</span>
           </button>
           <div className="hidden md:block text-right">
             <p className="text-sm font-semibold leading-tight">{user.name}</p>

@@ -17,7 +17,6 @@ import usePayments from '../hooks/usePayments';
 import useProjects from '../hooks/useProjects';
 import useTable from '../hooks/useTable';
 import useTenders from '../hooks/useTenders';
-import useWavesProfile from '../hooks/useWavesProfile';
 import { useToast } from '../context/ToastContext';
 import { loadAllMilestones } from '../utils/stats';
 
@@ -73,7 +72,6 @@ function stageProgress(project, tenders) {
 export default function OfficerDashboard() {
   const { projects, loading, error, refresh } = useProjects();
   const { tenders } = useTenders();
-  const waves = useWavesProfile();
   const toast = useToast();
   const [milestones, setMilestones] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -137,13 +135,13 @@ export default function OfficerDashboard() {
         </Link>
       ),
     },
-    { key: 'location', label: 'Location', sortable: true, render: (p) => p.location || 'â€”' },
+    { key: 'location', label: 'Location', sortable: true, render: (p) => p.location || '—' },
     {
       key: 'budget',
       label: 'Budget',
       sortable: true,
       align: 'right',
-      render: (p) => `â‚¹${Number(p.budget).toLocaleString('en-IN')}`,
+      render: (p) => `₹${Number(p.budget).toLocaleString('en-IN')}`,
     },
     {
       key: 'status',
@@ -172,9 +170,9 @@ export default function OfficerDashboard() {
     {
       key: 'contractor',
       label: 'Contractor',
-      render: (p) => contractorForProject(p, tenders || []) || 'â€”',
+      render: (p) => contractorForProject(p, tenders || []) || '—',
     },
-    { key: 'end_date', label: 'Deadline', sortable: true, render: (p) => p.end_date || 'â€”' },
+    { key: 'end_date', label: 'Deadline', sortable: true, render: (p) => p.end_date || '—' },
   ];
 
   return (
@@ -187,7 +185,7 @@ export default function OfficerDashboard() {
           <p className="gc-eyebrow">Officer console</p>
           <h1 className="text-2xl mt-1">Programme overview</h1>
           <p className="gc-hero-note">
-            Projects, tenders and milestones across the programme â€” tracked from
+            Projects, tenders and milestones across the programme — tracked from
             planning through to completion.
           </p>
           <div className="gc-hero-actions">
@@ -211,7 +209,7 @@ export default function OfficerDashboard() {
             <StatField delay={3} label="Total tenders" value={stats.totalTenders} />
             <StatField delay={4} label="Active tenders" value={stats.activeTenders} />
             <StatField delay={5} label="Pending milestones" value={stats.pendingMilestones} />
-            <StatField delay={5} label="Allocated budget" value={stats.allocatedBudget} prefix="â‚¹" />
+            <StatField delay={5} label="Allocated budget" value={stats.allocatedBudget} prefix="₹" />
           </div>
 
           {/* Stage 3.3 · payments at a glance. Full management (authorize / reject /
@@ -306,7 +304,7 @@ export default function OfficerDashboard() {
                 <span className="gc-search-icon">âŒ•</span>
                 <input
                   className="gc-input"
-                  placeholder="Search projectsâ€¦"
+                  placeholder="Search projects…"
                   value={table.search}
                   onChange={(e) => table.setSearch(e.target.value)}
                 />
@@ -361,10 +359,10 @@ export default function OfficerDashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <Fact label="Location" value={selected.location || 'â€”'} />
-              <Fact label="Budget" value={`â‚¹${Number(selected.budget).toLocaleString('en-IN')}`} />
-              <Fact label="Start" value={selected.start_date || 'â€”'} />
-              <Fact label="Deadline" value={selected.end_date || 'â€”'} />
+              <Fact label="Location" value={selected.location || '—'} />
+              <Fact label="Budget" value={`₹${Number(selected.budget).toLocaleString('en-IN')}`} />
+              <Fact label="Start" value={selected.start_date || '—'} />
+              <Fact label="Deadline" value={selected.end_date || '—'} />
               <Fact
                 label="Contractor"
                 value={contractorForProject(selected, tenders || []) || 'Not assigned'}

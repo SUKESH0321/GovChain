@@ -8,7 +8,6 @@ import ErrorState from '../components/ui/ErrorState';
 import LoadingState from '../components/ui/LoadingState';
 import StatusBadge from '../components/ui/StatusBadge';
 import { useAuth } from '../context/AuthContext';
-import useWavesProfile from '../hooks/useWavesProfile';
 import {
   filterMilestonesForProjects,
   getAssignedProjects,
@@ -36,7 +35,6 @@ function StatCell({ label, value, delay = 1 }) {
 
 export default function ContractorDashboard() {
   const { user } = useAuth();
-  const waves = useWavesProfile();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 

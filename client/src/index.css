@@ -117,8 +117,8 @@
   .gc-btn-primary:hover:not(:disabled) { background: #0046b0; border-color: #0046b0; color: #fff; }
   .gc-btn-blue { background: var(--gc-sky); color: var(--gc-navy); border-color: var(--gc-sky); }
   .gc-btn-blue:hover:not(:disabled) { background: #1daef1; border-color: #1daef1; color: var(--gc-navy); }
-  .gc-btn-outline { border-color: var(--gc-line-strong); background: #fff; color: var(--gc-blue); }
-  .gc-btn-outline:hover:not(:disabled) { border-color: var(--gc-blue); background: var(--gc-blue-soft); color: var(--gc-blue); }
+  .gc-btn-outline { border-color: var(--gc-blue); background: #fff; color: var(--gc-blue); }
+  .gc-btn-outline:hover:not(:disabled) { border-color: #0046b0; background: var(--gc-blue-soft); color: #0046b0; }
   .gc-btn-danger { background: var(--gc-red); color: #fff; border-color: var(--gc-red); }
   .gc-btn-danger:hover:not(:disabled) { background: #8f2f26; border-color: #8f2f26; color: #fff; }
   .gc-btn-neutral { background: #fbfcfe; color: var(--gc-ink); border-color: var(--gc-line-strong); }
@@ -621,20 +621,6 @@
   .gc-stagger-3 { animation-delay: 150ms; }
   .gc-stagger-4 { animation-delay: 200ms; }
   .gc-stagger-5 { animation-delay: 250ms; }
-
-  /* Utility truncation classes */
-  .gc-truncate-hash {
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-  .gc-break-words {
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
 }
 
 /* Animations ------------------------------------------------------------------ */

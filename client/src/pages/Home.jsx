@@ -91,11 +91,12 @@ export default function Home() {
         </div>
 
 
-        <div className="grid md:grid-cols-3 gap-4 mt-10">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
           {[
             ['Officer console', 'Bid, award and manage government projects and tenders.'],
             ['Contractor workbench', 'Track the work assigned to you, milestone by milestone.'],
             ['Audit console', 'Examine projects, tenders and milestone records read-only.'],
+            ['AI Risk Intelligence', 'Automated anomaly detection and blockchain-backed evidence.'],
           ].map(([title, body], index) => (
             <div
               key={title}
@@ -103,16 +104,16 @@ export default function Home() {
               style={{ borderTopWidth: 4, borderStyle: 'solid', borderColor: '#0057D9' }}
             >
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Role 0{index + 1}</p>
-              <h2 className="text-xl font-bold text-gray-900 mt-2">{title}</h2>
-              <p className="text-base text-gray-600 mt-3 leading-relaxed">{body}</p>
+              <h2 className="text-xl font-bold text-[#1d2632] mt-2">{title}</h2>
+              <p className="text-base text-[#4a5c6e] mt-3 leading-relaxed">{body}</p>
             </div>
           ))}
         </div>
       </main>
 
-      <footer className="mt-auto relative z-20" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <footer className="mt-auto relative z-20 bg-[#0b2140]">
         <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[rgba(255,255,255,0.7)]">
-          <span>GovChain — Stage 1 prototype</span>
+          <span>GovChain — Transparent public project tracking</span>
           <Link to="/health" className="hover:text-white transition-colors underline underline-offset-2">System health</Link>
         </div>
       </footer>

@@ -21,8 +21,8 @@ export default function Drawer({ open, onClose, title, children, footer, width =
   return (
     <div className="gc-drawer-backdrop gc-animate-entrance" onMouseDown={onClose} role="presentation">
       <aside
-        className="gc-drawer gc-animate-entrance"
-        style={{ maxWidth: '100vw' }}
+        className="gc-drawer"
+        style={{ width, maxWidth: '100vw' }}
         role="dialog"
         aria-modal="true"
         onMouseDown={(e) => e.stopPropagation()}

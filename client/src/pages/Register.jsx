@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import useWavesProfile from '../hooks/useWavesProfile';
 
 const ROLE_OPTIONS = [
   { value: 'government_officer', label: 'Government Officer' },
@@ -15,7 +14,6 @@ const ROLE_OPTIONS = [
 export default function Register() {
   const { register } = useAuth();
   const toast = useToast();
-  const waves = useWavesProfile();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

@@ -94,7 +94,7 @@ export default function Sidebar({ open, onClose }) {
             type="button"
             onClick={logout}
             className="w-full gc-btn gc-btn-outline gc-btn-sm justify-center gc-interactive"
-            style={{ color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.25)' }}
+            style={{ color: '#e2e8f0', background: 'transparent', borderColor: 'rgba(255,255,255,0.25)' }}
           >
             Log out
           </button>
